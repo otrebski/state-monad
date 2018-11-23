@@ -10,15 +10,12 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
   private val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
   private val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
+  
   var vendingMachineState = VendingMachineState(
     credit = 0, income = 0,
-    productsDef = List(
-      beer,
-      pizza
-    ),
     quantity = Map(
-      "1" -> 5,
-      "2" -> 1
+      beer -> 5,
+      pizza -> 1
     ),
     now = LocalDate.of(2018, 10, 1)
   )
@@ -31,7 +28,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r <- VendingMachineSm.process(SelectProduct("1"))
       } yield r).run(vendingMachineState).value
 
-      state.quantity.get("1") shouldBe Some(4)
+      state.quantity.get(beer) shouldBe Some(4)
       results.userOutputs.contains(GiveProductAndChange(beer, 7)) shouldBe true
     }
 
@@ -41,7 +38,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r <- VendingMachineSm.process(SelectProduct("1"))
       } yield r).run(vendingMachineState).value
 
-      state.quantity.get("1") shouldBe Some(5)
+      state.quantity.get(beer) shouldBe Some(5)
       state.credit shouldBe 1
       results.userOutputs.contains(NotEnoughOfCredit(2)) shouldBe true
     }
@@ -52,7 +49,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r <- VendingMachineSm.process(SelectProduct("3"))
       } yield r).run(vendingMachineState).value
 
-      state.quantity.get("1") shouldBe Some(5)
+      state.quantity.get(beer) shouldBe Some(5)
       state.credit shouldBe 1
       results.userOutputs.contains(WrongProduct) shouldBe true
     }
@@ -61,9 +58,9 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       val (state, results) = (for {
         _ <- VendingMachineSm.process(Credit(10))
         r <- VendingMachineSm.process(SelectProduct("1"))
-      } yield r).run(vendingMachineState.copy(quantity = Map("1" -> 0))).value
+      } yield r).run(vendingMachineState.copy(quantity = Map(beer -> 0))).value
 
-      state.quantity.get("1") shouldBe Some(0)
+      state.quantity.get(beer) shouldBe Some(0)
       state.credit shouldBe 10
       results.userOutputs.contains(OutOfStock(beer)) shouldBe true
     }

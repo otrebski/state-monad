@@ -24,9 +24,9 @@ object VendingMachineSm {
   def checkExpiryDate(action: Action): State[VendingMachineState, ActionResult] =
     State[VendingMachineState, ActionResult] { s =>
       if (action == CheckExpiryDate) {
-        val products = s.productsDef.filter { p =>
+        val products = s.quantity.keys.filter { p =>
           !p.expiryDate.isAfter(s.now) && !s.reportedExpiryDate.contains(p)
-        }
+        }.toList
         val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
         val result = if (products.nonEmpty) ExpiredProducts(products).actionResult() else ActionResult()
         (newState, result)
@@ -48,9 +48,9 @@ object VendingMachineSm {
         case SelectProduct(number) =>
           val selected = number.toString
 
-          val maybeProduct = s.productsDef.find(_.code == selected)
+          val maybeProduct = s.quantity.keys.find(_.code == selected)
 
-          val maybeQuantity = s.quantity.get(selected)
+          val maybeQuantity = maybeProduct.map(s.quantity)
           (maybeProduct, maybeQuantity) match {
             case (Some(product), Some(q)) if product.price <= s.credit && q > 0 =>
               val giveChange = s.credit - product.price
@@ -58,7 +58,7 @@ object VendingMachineSm {
               val newState = s.copy(
                 credit = 0,
                 income = s.income + product.price,
-                quantity = s.quantity.updated(selected, newQuantity)
+                quantity = s.quantity.updated(product, newQuantity)
               )
               val list = GiveProductAndChange(product, giveChange).actionResult()
               val shortage =
@@ -85,8 +85,7 @@ object VendingMachineSm {
     }
   case class VendingMachineState(credit: Int,
                                  income: Int,
-                                 productsDef: List[Domain.Product] = List.empty,
-                                 quantity: Map[String, Int] = Map.empty,
+                                 quantity: Map[Product, Int] = Map.empty,
                                  now: LocalDate = LocalDate.now(),
                                  reportedExpiryDate: Set[Domain.Product] = Set.empty[Domain.Product]
                                 )

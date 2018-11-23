@@ -20,10 +20,9 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
   with Matchers {
   val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
   val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
-  private val productsDef = List(beer, pizza)
-  val quantity = Map("1" -> 5, "2" -> 3)
-  def createActor(productsDef: List[Domain.Product],
-                  quantity: Map[String, Int],
+
+  val quantity = Map(beer -> 5, pizza -> 3)
+  def createActor(quantity: Map[Domain.Product, Int],
                   userOutputActor: ActorRef,
                   reportsActor: ActorRef): ActorRef
 
@@ -34,7 +33,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "successfully buy and give change" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
       underTest ! SelectProduct("1")
@@ -42,14 +41,14 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       userOutput.expectMsg(GiveProductAndChange(beer, 7))
 
       val state = Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds)
-      state.quantity.get("1") shouldBe Some(4)
+      state.quantity.get(beer) shouldBe Some(4)
 
     }
 
     "refuse to buy if not enough of money" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
@@ -63,7 +62,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "refuse to buy for wrong product selection" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
@@ -76,7 +75,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "refuse to buy if out of stock" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity.updated(beer.code, 0), userOutput.ref, reports.ref)
+      val underTest = createActor(quantity.updated(beer, 0), userOutput.ref, reports.ref)
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
@@ -89,7 +88,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "track credit" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds).credit shouldBe 0
 
@@ -103,7 +102,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "track income" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds).income shouldBe 0
 
@@ -123,7 +122,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "give back all money if withdraw" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
@@ -136,7 +135,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "report if money box is almost full" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       underTest ! Credit(100)
       userOutput.expectMsg(CreditInfo(100))
@@ -151,7 +150,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "do not report if money box is almost full  for a second time" ignore {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(quantity, userOutput.ref, reports.ref)
 
       underTest ! Credit(100)
       userOutput.expectMsg(CreditInfo(100))
@@ -169,7 +168,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
     "report shortage of product" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(productsDef, quantity.updated(beer.code, 1), userOutput.ref, reports.ref)
+      val underTest = createActor(quantity.updated(beer, 1), userOutput.ref, reports.ref)
 
       underTest ! Credit(beer.price)
       userOutput.expectMsg(CreditInfo(beer.price))
@@ -184,7 +183,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       val oldPaprika = pizza.copy(expiryDate = LocalDate.now().minusDays(1))
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(List(beer, oldPaprika), quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(Map(oldPaprika -> 2), userOutput.ref, reports.ref)
 
       underTest ! CheckExpiryDate
       reports.expectMsg(ExpiredProducts(List(oldPaprika)))
@@ -194,7 +193,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       val oldPaprika = pizza.copy(expiryDate = LocalDate.now().minusDays(1))
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
-      val underTest = createActor(List(beer, oldPaprika), quantity, userOutput.ref, reports.ref)
+      val underTest = createActor(Map(oldPaprika -> 2), userOutput.ref, reports.ref)
 
       underTest ! CheckExpiryDate
       reports.expectMsg(ExpiredProducts(List(oldPaprika)))

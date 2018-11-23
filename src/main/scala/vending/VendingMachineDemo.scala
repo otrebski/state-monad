@@ -37,28 +37,21 @@ object VendingMachineDemo extends App {
       | 2 -> Logic in State Monad""".stripMargin)
   var vendingMachineState = VendingMachineState(
     credit = 0, income = 0,
-    productsDef = List(
-      Product(price = 4, code = "1", symbol = Symbols.candy, expiryDate = expiryDate),
-      Product(price = 2, code = "2", symbol = Symbols.pizza, expiryDate = expiryDate),
-      Product(price = 1, code = "3", symbol = Symbols.banana, expiryDate = expiryDate),
-      Product(price = 8, code = "4", symbol = Symbols.beer, expiryDate = expiryDate),
-    ),
+
     quantity = Map(
-      "1" -> 1,
-      "2" -> 6,
-      "3" -> 2,
-      "4" -> 3,
-      "5" -> 5
+      Product(price = 4, code = "1", symbol = Symbols.candy, expiryDate = expiryDate) -> 1,
+      Product(price = 2, code = "2", symbol = Symbols.pizza, expiryDate = expiryDate) -> 6,
+      Product(price = 1, code = "3", symbol = Symbols.banana, expiryDate = expiryDate) -> 2,
+      Product(price = 8, code = "4", symbol = Symbols.beer, expiryDate = expiryDate) -> 3,
     )
   )
   def chooseActor(): Props = {
     StdIn.readLine().trim match {
       case "1" => Props(new BaseVendingMachineActor(
-        vendingMachineState.productsDef,
         vendingMachineState.quantity,
         userOutputActor,
         reportsActor))
-      case "2" => Props(new SmActor(vendingMachineState.productsDef, vendingMachineState.quantity, userOutputActor, reportsActor))
+      case "2" => Props(new SmActor(vendingMachineState.quantity, userOutputActor, reportsActor))
       case _ => chooseActor()
     }
   }

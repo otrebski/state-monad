@@ -10,8 +10,7 @@ import cats.syntax.show._
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
-class SmActor(productsDef: List[Product],
-              quantity: Map[String, Int],
+class SmActor(quantity: Map[Product, Int],
               userReportActor: ActorRef,
               reportsActor: ActorRef)
   extends Actor {
@@ -19,7 +18,6 @@ class SmActor(productsDef: List[Product],
   var vendingMachineState = VendingMachineState(
     credit = 0,
     income = 0,
-    productsDef = productsDef,
     quantity = quantity
   )
 

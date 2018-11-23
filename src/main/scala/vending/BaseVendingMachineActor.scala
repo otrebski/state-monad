@@ -10,8 +10,7 @@ import cats.syntax.show._
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
-class BaseVendingMachineActor(productsDef: List[Domain.Product],
-                              var quantity: Map[String, Int],
+class BaseVendingMachineActor(var quantity: Map[Product, Int],
                               userReportActor: ActorRef,
                               reportsActor: ActorRef
                              ) extends Actor {
@@ -38,8 +37,8 @@ class BaseVendingMachineActor(productsDef: List[Domain.Product],
 
     case SelectProduct(number) =>
       val selected = number.toString
-      val maybeQuantity = quantity.get(selected)
-      val maybeProduct = productsDef.find(_.code == selected)
+      val maybeProduct = quantity.keys.find(_.code == selected)
+      val maybeQuantity = maybeProduct.map(quantity)
       (maybeProduct, maybeQuantity) match {
         case (Some(product), Some(q)) if product.price <= credit && q > 0 =>
           val giveChange = credit - product.price
@@ -47,7 +46,7 @@ class BaseVendingMachineActor(productsDef: List[Domain.Product],
 
           credit = 0
           income += product.price
-          quantity = quantity.updated(product.code, newQuantity)
+          quantity = quantity.updated(product, newQuantity)
 
           userReportActor ! GiveProductAndChange(product, giveChange)
 
@@ -66,25 +65,25 @@ class BaseVendingMachineActor(productsDef: List[Domain.Product],
 
     case CheckExpiryDate =>
       val now = LocalDate.now()
-      val products = productsDef.filter { p =>
+      val expiredProducts = quantity.keys.filter { p =>
         !p.expiryDate.isAfter(now) && !expiryNotified.contains(p)
       }
-      expiryNotified = expiryNotified ++ products.toSet
-      if (products.nonEmpty) {
-        reportsActor ! ExpiredProducts(products)
+      expiryNotified = expiryNotified ++ expiredProducts.toSet
+      if (expiredProducts.nonEmpty) {
+        reportsActor ! ExpiredProducts(expiredProducts.toList)
       }
 
     case GetState =>
       val vm = VendingMachineState(
         credit, income,
-        productsDef, quantity,
+        quantity,
         reportedExpiryDate = expiryNotified)
       sender() ! vm
 
     case AskForStateAsString =>
       val vm = VendingMachineState(
         credit, income,
-        productsDef, quantity,
+        quantity,
         reportedExpiryDate = expiryNotified)
       sender() ! vm.show
 

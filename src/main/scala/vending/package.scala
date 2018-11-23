@@ -4,8 +4,8 @@ import vending.VendingMachineSm.VendingMachineState
 
 package object vending {
   implicit val vendingShow: Show[VendingMachineState] = (t: VendingMachineState) => {
-    val products = t.productsDef.map { product =>
-      s"${product.code}: ${product.price}PLN <${t.quantity.get(product.code).map(product.symbol * _).getOrElse("")}>"
+    val products = t.quantity.map { case (product,quantity )=>
+      s"${product.code}: ${product.price}PLN <${product.symbol * quantity}>"
     }
     s"""
        | +-----------------------------+
