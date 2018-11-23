@@ -15,13 +15,30 @@ Vending machine can give you a product, change or display message. Additionally 
 
 ## Implementation
 There are two implementations of vending machine:
- - actor based, all logic is in actor
- - all logic in state monad (from cats), actor is for communication and keeping state 
+ - [actor based](https://github.com/otrebski/state-monad/blob/master/src/main/scala/vending/BaseVendingMachineActor.scala), all logic is in actor
+ - [all logic in state monad](https://github.com/otrebski/state-monad/blob/master/src/main/scala/vending/VendingMachineSm.scala) (from cats), [actor](https://github.com/otrebski/state-monad/blob/master/src/main/scala/vending/SmActor.scala) is for communication and keeping state 
 
 ## Run app
 Running application: 
 
 ```bash
-sbt runMain vending.VendingMachineDemo
+sbt "runMain vending.VendingMachineDemo"
 ```
 
+You will be asked to choose implementation.
+
+Interaction with vending machine:
+```
++digit -> insert coins, for example: +3
+digit  -> select number, for example: 2
+-      -> resign and take your money
+q      -> quit program
+```
+
+## Tests
+
+Tests are written for:
+ - [actors](https://github.com/otrebski/state-monad/blob/master/src/test/scala/vending/BaseActorTest.scala)
+ - [state monad](https://github.com/otrebski/state-monad/blob/master/src/test/scala/vending/VendingMachineSmTest.scala)
+
+One test is ignored (`should do not report if money box is almost full  for a second time`). This test is currently failing because feature is not implemented. You can enable this test and implement logic using Actor and state monad.
