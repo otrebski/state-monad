@@ -84,7 +84,7 @@ object VendingMachineDemo extends App {
   }
 
   val program = for {
-    userOutputActor <- IO(system.actorOf(Props(new SystemReportsActor)))
+    userOutputActor <- IO(system.actorOf(Props(new UserOutputsActor)))
     reportsActor <- IO(system.actorOf(Props(new SystemReportsActor)))
     props <- chooseActor(userOutputActor, reportsActor)
     actor = system.actorOf(props, "vm")
