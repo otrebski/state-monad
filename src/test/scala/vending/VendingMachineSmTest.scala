@@ -226,7 +226,6 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r2 <- VendingMachineSm.detectShortage()
       } yield (r1, r2)).run(state0).value
 
-      println(state)
       results._1 shouldBe List(NotifyAboutShortage(beer))
       results._2 shouldBe List.empty
     }
