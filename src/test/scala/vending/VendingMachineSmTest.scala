@@ -200,14 +200,19 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       val (state1, results) = VendingMachineSm.selectProduct(SelectProduct(beer.code)).run(state0).value
 
       state1.income shouldBe beer.price
-      results shouldBe GiveProductAndChange(beer, 7).actionResult()
+      results shouldBe GiveProductAndChange(beer, 7).some
     }
     "refuse to buy if not enough of money" in {
       val (state1, results) = VendingMachineSm.selectProduct(SelectProduct(pizza.code)).run(state0).value
 
       state1.income shouldBe 0
       state1.credit shouldBe 10
-      results shouldBe NotEnoughOfCredit(90).actionResult()
+      results shouldBe NotEnoughOfCredit(90).some
     }
   }
+
+  //TODO tests for state monads:
+  // - detectShortage
+  // - detectMoneyBoxAlmostFull
+
 }
