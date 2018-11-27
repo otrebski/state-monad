@@ -5,6 +5,7 @@ import java.time.LocalDate
 import org.scalatest.{Matchers, WordSpec}
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
+import cats.syntax.option._
 
 class VendingMachineSmTest extends WordSpec with Matchers {
 
@@ -143,7 +144,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "find expired products" in {
       val (state1, results) = VendingMachineSm.checkExpiryDate(CheckExpiryDate).run(state0).value
 
-      results shouldBe ExpiredProducts(List(pizza)).actionResult()
+      results shouldBe ExpiredProducts(List(pizza)).some
       state1.reportedExpiryDate shouldBe Set(pizza)
     }
 
@@ -153,14 +154,14 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r <- VendingMachineSm.checkExpiryDate(CheckExpiryDate)
       } yield r).run(state0).value
 
-      results shouldBe ActionResult()
+      results shouldBe none[ExpiredProducts]
       state1.reportedExpiryDate shouldBe Set(pizza)
     }
 
     "check that all products are ok" in {
       val (state1, results) = VendingMachineSm.checkExpiryDate(CheckExpiryDate).run(state0.copy(now = LocalDate.MIN)).value
 
-      results shouldBe ActionResult()
+      results shouldBe none[ExpiredProducts]
       state1.reportedExpiryDate shouldBe Set.empty[Product]
     }
   }
@@ -175,8 +176,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       } yield (r1, r2)).run(vendingMachineState).value
 
       state.credit shouldBe 7
-      result1 shouldBe CreditInfo(2).actionResult()
-      result2 shouldBe CreditInfo(7).actionResult()
+      result1 shouldBe CreditInfo(2).some
+      result2 shouldBe CreditInfo(7).some
     }
 
     "clear credit when withdrawn is selected" in {
@@ -185,7 +186,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       val (state1, result1) = VendingMachineSm.updateCredit(Withdrawn).run(state0).value
 
       state1.credit shouldBe 0
-      result1 shouldBe CollectYourMoney.actionResult()
+      result1 shouldBe CollectYourMoney.some
     }
 
   }

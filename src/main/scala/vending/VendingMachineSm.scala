@@ -6,6 +6,7 @@ import cats.Eval
 import cats.data.{IndexedStateT, State}
 import cats.syntax.monoid._
 import vending.Domain._
+import cats.syntax.option._
 
 object VendingMachineSm {
   def process(action: Action, vendingMachineState: VendingMachineState): (VendingMachineState, ActionResult) = {
@@ -20,26 +21,28 @@ object VendingMachineSm {
       //  result ⬅  application()
       //              ⬇ modified state
       expiredResult <- checkExpiryDate(action)
-    } yield updateResult |+| expiredResult |+| selectResult
-  def checkExpiryDate(action: Action): State[VendingMachineState, ActionResult] =
-    State[VendingMachineState, ActionResult] { s =>
+    } yield ActionResult(userOutputs = updateResult.toList) |+| ActionResult(systemReports = expiredResult.toList) |+| selectResult
+
+  def checkExpiryDate(action: Action): State[VendingMachineState, Option[SystemReporting]] =
+    State[VendingMachineState, Option[SystemReporting]] { s =>
       if (action == CheckExpiryDate) {
         val products = s.quantity.keys.filter { p =>
           !p.expiryDate.isAfter(s.now) && !s.reportedExpiryDate.contains(p)
         }.toList
         val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
-        val result = if (products.nonEmpty) ExpiredProducts(products).actionResult() else ActionResult()
+        val result = if (products.nonEmpty) ExpiredProducts(products).some else none[SystemReporting]
         (newState, result)
       } else {
-        (s, ActionResult())
+        (s, none[SystemReporting])
       }
     }
-  def updateCredit(action: Action): State[VendingMachineState, ActionResult] =
-    State[VendingMachineState, ActionResult] { s =>
+
+  def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =
+    State[VendingMachineState, Option[UserOutput]] { s =>
       action match {
-        case Credit(value) => (s.copy(credit = s.credit + value), CreditInfo(s.credit + value).actionResult())
-        case Withdrawn => (s.copy(credit = 0), CollectYourMoney.actionResult())
-        case _ => (s, ActionResult())
+        case Credit(value) => (s.copy(credit = s.credit + value), CreditInfo(s.credit + value).some)
+        case Withdrawn => (s.copy(credit = 0), CollectYourMoney.some)
+        case _ => (s, none[UserOutput])
       }
     }
   def selectProduct(action: Action): State[VendingMachineState, ActionResult] =
