@@ -6,15 +6,14 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.StdIn
 import scala.language.postfixOps
-
 import akka.actor.{ActorRef, ActorSystem, Props}
-import cats.effect.IO
 import akka.pattern.ask
 import akka.util.Timeout
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
-//TODO remove IO
+import scala.annotation.tailrec
+
 object VendingMachineDemo extends App {
 
   println("Vending machine demo")
@@ -30,10 +29,10 @@ object VendingMachineDemo extends App {
   var vendingMachineState = VendingMachineState(
     credit = 0, income = 0,
     quantity = Map(
-      Product(price = 4, code = "1", symbol = Symbols.candy, expiryDate = expiryDate)  -> 1,
-      Product(price = 2, code = "2", symbol = Symbols.pizza, expiryDate = expiryDate)  -> 6,
+      Product(price = 4, code = "1", symbol = Symbols.candy, expiryDate = expiryDate) -> 1,
+      Product(price = 2, code = "2", symbol = Symbols.pizza, expiryDate = expiryDate) -> 6,
       Product(price = 1, code = "3", symbol = Symbols.banana, expiryDate = expiryDate) -> 2,
-      Product(price = 8, code = "4", symbol = Symbols.beer, expiryDate = expiryDate)   -> 3
+      Product(price = 8, code = "4", symbol = Symbols.beer, expiryDate = expiryDate) -> 3
     )
   )
 
@@ -41,59 +40,13 @@ object VendingMachineDemo extends App {
 
   private implicit val timeout: Timeout = Timeout(1 second)
 
-  val clear = IO(print("\u001b[2J"))
+  val clear = "\u001b[2J"
 
   println(
     """Pick Vending machine implementation:
       | 1 -> Logic in actor
       | 2 -> Logic in State Monad""".stripMargin)
 
-  def chooseActor(userOutputActor: ActorRef, reportsActor: ActorRef): IO[Props] = {
-    for {
-      answer <- IO(StdIn.readLine())
-      props <- answer match {
-        case "1" => IO(Props(new BaseVendingMachineActor(
-          vendingMachineState.quantity,
-          userOutputActor,
-          reportsActor)))
-        case "2" => IO(Props(new SmActor(
-          vendingMachineState.quantity,
-          userOutputActor,
-          reportsActor)))
-        case _ => chooseActor(userOutputActor, reportsActor)
-      }
-    } yield props
-  }
-
-  def loop(actor: ActorRef): IO[Unit] = {
-    for {
-      status <- IO(Await.result((actor ? AskForStateAsString).mapTo[String], 1 second))
-      _ <- IO(println(status))
-      _ <- IO(println(manual))
-      line <- IO(StdIn.readLine())
-      action = parseAction(line)
-      _ <- clear
-      _ <- action match {
-        case Some(Quit) => IO(())
-        case Some(a) =>
-          actor ! a
-          IO(() => ())
-          loop(actor)
-        case None => loop(actor)
-      }
-    } yield ()
-  }
-
-  val program = for {
-    userOutputActor <- IO(system.actorOf(Props(new UserOutputsActor)))
-    reportsActor <- IO(system.actorOf(Props(new SystemReportsActor)))
-    props <- chooseActor(userOutputActor, reportsActor)
-    actor = system.actorOf(props, "vm")
-    _ <- loop(actor)
-    _ <- IO(system.terminate())
-  } yield ()
-
-  program.unsafeRunSync()
 
   //TODO parse to long number like 111111111111111111111111111
   private def parseAction(line: String): Option[Action] = {
@@ -111,4 +64,43 @@ object VendingMachineDemo extends App {
     }
   }
 
+  def chooseActor(userOutputActor: ActorRef, reportsActor: ActorRef): Props = {
+    val answer = StdIn.readLine()
+    answer match {
+      case "1" => Props(new BaseVendingMachineActor(
+        vendingMachineState.quantity,
+        userOutputActor,
+        reportsActor))
+      case "2" => Props(new SmActor(
+        vendingMachineState.quantity,
+        userOutputActor,
+        reportsActor))
+      case _ => chooseActor(userOutputActor, reportsActor)
+    }
+  }
+
+  val userOutputActor = system.actorOf(Props(new UserOutputsActor))
+  val reportsActor = system.actorOf(Props(new SystemReportsActor))
+  val props = chooseActor(userOutputActor, reportsActor)
+  val actor = system.actorOf(props, "vm")
+
+  @tailrec
+  def loop(actor: ActorRef): Unit = {
+    val status = Await.result((actor ? AskForStateAsString).mapTo[String], 1 second)
+    println(status)
+    println(manual)
+    val line = StdIn.readLine()
+    val action = parseAction(line)
+    println(clear)
+    action match {
+      case Some(Quit) => ()
+      case Some(a) =>
+        actor ! a
+        loop(actor)
+      case None => loop(actor)
+    }
+  }
+
+  loop(actor)
+  system.terminate()
 }
