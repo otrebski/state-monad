@@ -14,6 +14,7 @@ import akka.util.Timeout
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
+//TODO remove IO
 object VendingMachineDemo extends App {
 
   println("Vending machine demo")
@@ -94,6 +95,7 @@ object VendingMachineDemo extends App {
 
   program.unsafeRunSync()
 
+  //TODO parse to long number like 111111111111111111111111111
   private def parseAction(line: String): Option[Action] = {
     import cats.syntax.option._
     if (line.matches("\\+[\\d]+")) {
