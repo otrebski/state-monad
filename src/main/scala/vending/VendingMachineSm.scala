@@ -64,7 +64,7 @@ object VendingMachineSm {
       if (toNotify.isEmpty) {
         (s, List.empty[NotifyAboutShortage])
       } else {
-        (s, toNotify.toList.map(NotifyAboutShortage))
+        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(NotifyAboutShortage))
       }
     }
   }

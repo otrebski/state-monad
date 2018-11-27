@@ -11,7 +11,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
   private val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
   private val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
-  
+
   var vendingMachineState = VendingMachineState(
     credit = 0, income = 0,
     quantity = Map(
@@ -211,8 +211,33 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     }
   }
 
-  //TODO tests for state monads:
-  // - detectShortage
-  // - detectMoneyBoxAlmostFull
+  "detect shortage monad" should {
+
+    val state0 = vendingMachineState.copy(quantity = Map(beer -> 0))
+
+    "detect shortage" in {
+      val (_, results) = VendingMachineSm.detectShortage().run(state0).value
+      results shouldBe List(NotifyAboutShortage(beer))
+    }
+
+    "ignore shortage for a second time" in {
+      val (state, results) = (for {
+        r1 <- VendingMachineSm.detectShortage()
+        r2 <- VendingMachineSm.detectShortage()
+      } yield (r1, r2)).run(state0).value
+
+      println(state)
+      results._1 shouldBe List(NotifyAboutShortage(beer))
+      results._2 shouldBe List.empty
+    }
+  }
+
+  "detect money box almost full monad" should {
+    val state0 = vendingMachineState.copy(income = 100)
+    "notify if money box is almost full" in {
+      val (_, results) = VendingMachineSm.detectMoneyBoxAlmostFull().run(state0).value
+      results shouldBe MoneyBoxAlmostFull(100).some
+    }
+  }
 
 }
