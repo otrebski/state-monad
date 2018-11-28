@@ -42,3 +42,13 @@ Tests are written for:
  - [state monad](https://github.com/otrebski/state-monad/blob/master/src/test/scala/vending/VendingMachineSmTest.scala)
 
 One test is ignored (`should do not report if money box is almost full  for a second time`). This test is currently failing because feature is not implemented. You can enable this test and implement logic using Actor and state monad.
+
+## Where you should look
+Take a look at code and think about following topics:
+- can logic be divided into smaller parts?
+- can logic be composed from smaller parts?
+- can logic can be reused?
+- is it easy to test code? 
+- is it easy to add additional features?
+- how fast are test
+   
