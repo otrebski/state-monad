@@ -13,6 +13,21 @@ Vending machine can give you a product, change or display message. Additionally 
  - issues with expiry date
  - vending machine run out of product
 
+## Architecture
+```
+
+               ╭────────────╮     ╭────────────────╮
+ User Input -> │  Actor     │  -> │ User Outputs   │
+               │            │     ╰────────────────╯
+               │  Logic is  │     ╭────────────────╮
+               │  here      │  -> │ System reports │
+               ╰────────────╯     ╰────────────────╯
+
+
+
+```
+
+
 ## Implementation
 There are two implementations of vending machine:
  - [actor based](https://github.com/otrebski/state-monad/blob/master/src/main/scala/vending/BaseVendingMachineActor.scala), all logic is in actor
