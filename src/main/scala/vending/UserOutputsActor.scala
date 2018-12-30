@@ -12,6 +12,7 @@ class UserOutputsActor extends Actor {
     case OutOfStock(product) => println(s" <To User> We are out of stock of ${product.symbol}, select different one".inBox())
     case GiveProductAndChange(product, change) =>
       println(s" <To User> Here is your ${product.symbol} and ${change}PLN of change".inBox())
+    case Display(s) => println(s)
   }
 
 }

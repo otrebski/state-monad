@@ -30,10 +30,12 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
     case Credit(value) =>
       credit += value
       userReportActor ! CreditInfo(credit)
+      userReportActor ! Display(currentState())
 
     case Withdrawn =>
       credit = 0
       userReportActor ! CollectYourMoney
+      userReportActor ! Display(currentState())
 
     case SelectProduct(number) =>
       val selected = number.toString
@@ -52,15 +54,18 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
 
           if (newQuantity == 0) reportsActor ! NotifyAboutShortage(product)
           if (income > 10) reportsActor ! MoneyBoxAlmostFull(income)
+          userReportActor ! Display(currentState())
 
         case (Some(product), Some(q)) if q < 1 =>
           userReportActor ! OutOfStock(product)
-
+          userReportActor ! Display(currentState())
         case (Some(product), _) =>
           userReportActor ! NotEnoughOfCredit(product.price - credit)
+          userReportActor ! Display(currentState())
 
         case (None, _) =>
           userReportActor ! WrongProduct
+          userReportActor ! Display(currentState())
       }
 
     case CheckExpiryDate =>
@@ -80,12 +85,13 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
         reportedExpiryDate = expiryNotified)
       sender() ! vm
 
-    case AskForStateAsString =>
-      val vm = VendingMachineState(
-        credit, income,
-        quantity,
-        reportedExpiryDate = expiryNotified)
-      sender() ! vm.show
+  }
+
+  def currentState(): String = {
+    VendingMachineState(
+      credit, income,
+      quantity,
+      reportedExpiryDate = expiryNotified).show
 
   }
 }

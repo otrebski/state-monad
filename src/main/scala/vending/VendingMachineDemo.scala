@@ -2,13 +2,8 @@ package vending
 
 import java.time.LocalDate
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.io.StdIn
-import scala.language.postfixOps
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.pattern.ask
-import akka.util.Timeout
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
@@ -37,8 +32,6 @@ object VendingMachineDemo extends App {
   )
 
   private val system = ActorSystem("vending_machine")
-
-  private implicit val timeout: Timeout = Timeout(1 second)
 
   val clear = "\u001b[2J"
 
@@ -83,11 +76,10 @@ object VendingMachineDemo extends App {
   val reportsActor = system.actorOf(Props(new SystemReportsActor))
   val props = chooseActor(userOutputActor, reportsActor)
   val actor = system.actorOf(props, "vm")
+  actor  ! Credit(0)
 
   @tailrec
   def loop(actor: ActorRef): Unit = {
-    val status = Await.result((actor ? AskForStateAsString).mapTo[String], 1 second)
-    println(status)
     println(manual)
     val line = StdIn.readLine()
     val action = parseAction(line)
