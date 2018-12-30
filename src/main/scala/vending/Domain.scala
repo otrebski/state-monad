@@ -6,7 +6,6 @@ import cats.kernel.Monoid
 
 object Domain {
 
-  case object AskForStateAsString
   case object GetState
 
   sealed trait Action
@@ -24,6 +23,7 @@ object Domain {
   case class OutOfStock(product: Product) extends UserOutput
   case class NotifyAboutShortage(products: Product) extends SystemReporting
   case class GiveProductAndChange(selected: Product, change: Int) extends UserOutput
+  case class Display(string: String) extends UserOutput
 
   sealed trait SystemReporting
   case class MoneyBoxAlmostFull(amount: Int) extends SystemReporting

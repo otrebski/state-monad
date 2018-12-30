@@ -18,10 +18,11 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
   with WordSpecLike
   with ImplicitSender
   with Matchers {
-  val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
-  val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
+  private val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
+  private val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
 
-  val quantity = Map(beer -> 5, pizza -> 3)
+  private val quantity = Map(beer -> 5, pizza -> 3)
+
   def createActor(quantity: Map[Domain.Product, Int],
                   userOutputActor: ActorRef,
                   reportsActor: ActorRef): ActorRef
@@ -36,9 +37,11 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       val underTest = createActor(quantity, userOutput.ref, reports.ref)
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
       underTest ! SelectProduct("1")
 
       userOutput.expectMsg(GiveProductAndChange(beer, 7))
+      userOutput.expectMsgType[Display]
 
       val state = Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds)
       state.quantity.get(beer) shouldBe Some(4)
@@ -52,10 +55,11 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
-
+      userOutput.expectMsgType[Display]
       underTest ! SelectProduct("2")
 
       userOutput.expectMsg(NotEnoughOfCredit(90))
+      userOutput.expectMsgType[Display]
 
     }
 
@@ -66,10 +70,12 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
 
       underTest ! SelectProduct("4")
 
       userOutput.expectMsg(WrongProduct)
+      userOutput.expectMsgType[Display]
     }
 
     "refuse to buy if out of stock" in {
@@ -79,10 +85,12 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
 
       underTest ! SelectProduct("1")
 
       userOutput.expectMsg(OutOfStock(beer))
+      userOutput.expectMsgType[Display]
     }
 
     "track credit" in {
@@ -94,9 +102,11 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(2)
       userOutput.expectMsg(CreditInfo(2))
+      userOutput.expectMsgType[Display]
 
       underTest ! Credit(3)
       userOutput.expectMsg(CreditInfo(5))
+      userOutput.expectMsgType[Display]
     }
 
     "track income" in {
@@ -108,14 +118,19 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
+
       underTest ! SelectProduct("1")
       userOutput.expectMsg(GiveProductAndChange(beer, 7))
+      userOutput.expectMsgType[Display]
       Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds).income shouldBe 3
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
       underTest ! SelectProduct("1")
       userOutput.expectMsg(GiveProductAndChange(beer, 7))
+      userOutput.expectMsgType[Display]
       Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds).income shouldBe 6
     }
 
@@ -126,10 +141,12 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(10)
       userOutput.expectMsg(CreditInfo(10))
+      userOutput.expectMsgType[Display]
 
       underTest ! Withdrawn
 
       userOutput.expectMsg(CollectYourMoney)
+      userOutput.expectMsgType[Display]
     }
 
     "report if money box is almost full" in {
@@ -139,10 +156,12 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(100)
       userOutput.expectMsg(CreditInfo(100))
+      userOutput.expectMsgType[Display]
 
       underTest ! SelectProduct("2")
 
       userOutput.expectMsg(GiveProductAndChange(pizza, 0))
+      userOutput.expectMsgType[Display]
       reports.expectMsg(MoneyBoxAlmostFull(100))
 
     }
@@ -154,13 +173,20 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(100)
       userOutput.expectMsg(CreditInfo(100))
+      userOutput.expectMsgType[Display]
+
       underTest ! SelectProduct("2")
       userOutput.expectMsg(GiveProductAndChange(pizza, 0))
+      userOutput.expectMsgType[Display]
       reports.expectMsg(MoneyBoxAlmostFull(100))
+
       underTest ! Credit(100)
       userOutput.expectMsg(CreditInfo(100))
+      userOutput.expectMsgType[Display]
+
       underTest ! SelectProduct("2")
       userOutput.expectMsg(GiveProductAndChange(pizza, 0))
+      userOutput.expectMsgType[Display]
 
       reports.expectNoMessage()
     }
@@ -172,9 +198,11 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
       underTest ! Credit(beer.price)
       userOutput.expectMsg(CreditInfo(beer.price))
+      userOutput.expectMsgType[Display]
 
       underTest ! SelectProduct("1")
       userOutput.expectMsg(GiveProductAndChange(beer, 0))
+      userOutput.expectMsgType[Display]
       reports.expectMsg(NotifyAboutShortage(beer))
 
     }

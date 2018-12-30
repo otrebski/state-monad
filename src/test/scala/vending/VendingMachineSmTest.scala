@@ -86,8 +86,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
           r2 <- VendingMachineSm.process(Credit(1))
         } yield (r1, r2)).run(vendingMachineState).value
 
-      result0 shouldBe CreditInfo(10).actionResult()
-      result1 shouldBe CreditInfo(11).actionResult()
+      result0.userOutputs.head shouldBe CreditInfo(10)
+      result1.userOutputs.head shouldBe CreditInfo(11)
       state.credit shouldBe 11
     }
 

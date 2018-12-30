@@ -2,12 +2,12 @@ package vending
 
 import java.time.LocalDate
 
-import cats.Eval
-import cats.data.{IndexedStateT, State}
-import vending.Domain._
-import cats.syntax.option._
-import cats.syntax.monoid._
+import cats.data.State
 import cats.instances.list._
+import cats.syntax.monoid._
+import cats.syntax.option._
+import cats.syntax.show._
+import vending.Domain._
 
 object VendingMachineSm {
 
@@ -15,7 +15,7 @@ object VendingMachineSm {
     process(action).run(vendingMachineState).value
   }
 
-  def process(action: Action): IndexedStateT[Eval, VendingMachineState, VendingMachineState, ActionResult] =
+  def process(action: Action): State[VendingMachineState, ActionResult] =
     for {
       updateResult <- updateCredit(action)
       //  result ⬅  application()
@@ -30,10 +30,22 @@ object VendingMachineSm {
       //  result ⬅  application()
       //              ⬇ modified state
       maybeMbaf <- detectMoneyBoxAlmostFull()
+      //  result ⬅  application()
+      //              ⬇ modified state
+      maybeDisplay <- maybeDisplayState(action)
     } yield ActionResult(
-      userOutputs = List(updateResult, selectResult).flatten,
+      userOutputs = List(updateResult, selectResult, maybeDisplay).flatten,
       systemReports = List(expiredResult, maybeMbaf).flatten |+| maybeShortage
     )
+
+  def maybeDisplayState(action: Action): State[VendingMachineState, Option[Display]] =
+    State[VendingMachineState, Option[Display]] { s =>
+      val r = action match {
+        case Credit(_) | Withdrawn | SelectProduct(_) => Display(s.show).some
+        case _ => None
+      }
+      (s, r)
+    }
 
   def checkExpiryDate(action: Action): State[VendingMachineState, Option[SystemReporting]] =
     State[VendingMachineState, Option[SystemReporting]] { s =>

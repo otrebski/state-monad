@@ -6,7 +6,6 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 import akka.actor.{Actor, ActorRef}
-import cats.syntax.show._
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
@@ -35,7 +34,5 @@ class SmActor(quantity: Map[Product, Int],
       results.userOutputs.foreach(userReportActor ! _)
 
     case GetState => sender() ! vendingMachineState
-
-    case AskForStateAsString => sender() ! vendingMachineState.show
   }
 }
