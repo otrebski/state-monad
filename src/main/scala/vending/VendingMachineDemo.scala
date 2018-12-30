@@ -3,11 +3,12 @@ package vending
 import java.time.LocalDate
 
 import scala.io.StdIn
+
 import akka.actor.{ActorRef, ActorSystem, Props}
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
-
 import scala.annotation.tailrec
+import scala.util.Try
 
 object VendingMachineDemo extends App {
 
@@ -41,13 +42,12 @@ object VendingMachineDemo extends App {
       | 2 -> Logic in State Monad""".stripMargin)
 
 
-  //TODO parse to long number like 111111111111111111111111111
   private def parseAction(line: String): Option[Action] = {
     import cats.syntax.option._
     if (line.matches("\\+[\\d]+")) {
-      Credit(line.toInt).some
+      Try(Credit(line.toInt)).toOption
     } else if (line.matches("\\d+")) {
-      SelectProduct(line).some
+      Try(SelectProduct(line)).toOption
     } else if (line == "-") {
       Withdrawn.some
     } else if (line == "q") {
@@ -83,10 +83,10 @@ object VendingMachineDemo extends App {
     println(manual)
     val line = StdIn.readLine()
     val action = parseAction(line)
-    println(clear)
     action match {
       case Some(Quit) => ()
       case Some(a) =>
+        println(clear)
         actor ! a
         loop(actor)
       case None => loop(actor)
