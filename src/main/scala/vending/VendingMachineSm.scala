@@ -38,29 +38,6 @@ object VendingMachineSm {
       systemReports = List(expiredResult, maybeMbaf).flatten |+| maybeShortage
     )
 
-  def maybeDisplayState(action: Action): State[VendingMachineState, Option[Display]] =
-    State[VendingMachineState, Option[Display]] { s =>
-      val r = action match {
-        case Credit(_) | Withdrawn | SelectProduct(_) => Display(s.show).some
-        case _ => None
-      }
-      (s, r)
-    }
-
-  def checkExpiryDate(action: Action): State[VendingMachineState, Option[SystemReporting]] =
-    State[VendingMachineState, Option[SystemReporting]] { s =>
-      if (action == CheckExpiryDate) {
-        val products = s.quantity.keys.filter { p =>
-          !p.expiryDate.isAfter(s.now) && !s.reportedExpiryDate.contains(p)
-        }.toList
-        val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
-        val result = if (products.nonEmpty) ExpiredProducts(products).some else none[SystemReporting]
-        (newState, result)
-      } else {
-        (s, none[SystemReporting])
-      }
-    }
-
   def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =
     State[VendingMachineState, Option[UserOutput]] { s =>
       action match {
@@ -69,27 +46,6 @@ object VendingMachineSm {
         case _ => (s, none[UserOutput])
       }
     }
-
-  def detectShortage(): State[VendingMachineState, List[NotifyAboutShortage]] = {
-    State[VendingMachineState, List[NotifyAboutShortage]] { s =>
-      val toNotify: Set[Product] = s.quantity.filter(_._2 == 0).keySet -- s.reportedShortage
-      if (toNotify.isEmpty) {
-        (s, List.empty[NotifyAboutShortage])
-      } else {
-        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(NotifyAboutShortage))
-      }
-    }
-  }
-
-  def detectMoneyBoxAlmostFull(): State[VendingMachineState, Option[MoneyBoxAlmostFull]] = {
-    State[VendingMachineState, Option[MoneyBoxAlmostFull]] { s =>
-      if (s.income > 10) {
-        (s, MoneyBoxAlmostFull(s.income).some)
-      } else {
-        (s, none[MoneyBoxAlmostFull])
-      }
-    }
-  }
 
   def selectProduct(action: Action): State[VendingMachineState, Option[UserOutput]] =
     State[VendingMachineState, Option[UserOutput]] { s =>
@@ -121,6 +77,51 @@ object VendingMachineSm {
 
         case _ => (s, none[UserOutput])
       }
+    }
+
+  def detectShortage(): State[VendingMachineState, List[NotifyAboutShortage]] = {
+    State[VendingMachineState, List[NotifyAboutShortage]] { s =>
+      val toNotify: Set[Product] = s.quantity.filter(_._2 == 0).keySet -- s.reportedShortage
+      if (toNotify.isEmpty) {
+        (s, List.empty[NotifyAboutShortage])
+      } else {
+        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(NotifyAboutShortage))
+      }
+    }
+  }
+
+  def checkExpiryDate(action: Action): State[VendingMachineState, Option[SystemReporting]] =
+
+    State[VendingMachineState, Option[SystemReporting]] { s =>
+      if (action == CheckExpiryDate) {
+        val products = s.quantity.keys.filter { p =>
+          !p.expiryDate.isAfter(s.now) && !s.reportedExpiryDate.contains(p)
+        }.toList
+        val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
+        val result = if (products.nonEmpty) ExpiredProducts(products).some else none[SystemReporting]
+        (newState, result)
+      } else {
+        (s, none[SystemReporting])
+      }
+    }
+
+  def detectMoneyBoxAlmostFull(): State[VendingMachineState, Option[MoneyBoxAlmostFull]] = {
+    State[VendingMachineState, Option[MoneyBoxAlmostFull]] { s =>
+      if (s.income > 10) {
+        (s, MoneyBoxAlmostFull(s.income).some)
+      } else {
+        (s, none[MoneyBoxAlmostFull])
+      }
+    }
+  }
+
+  def maybeDisplayState(action: Action): State[VendingMachineState, Option[Display]] =
+    State[VendingMachineState, Option[Display]] { s =>
+      val r = action match {
+        case Credit(_) | Withdrawn | SelectProduct(_) => Display(s.show).some
+        case _ => None
+      }
+      (s, r)
     }
 
   case class VendingMachineState(credit: Int,
