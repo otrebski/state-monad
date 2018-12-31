@@ -1,0 +1,8 @@
+language: scala
+os:
+  - linux
+script:
+  - sbt clean test
+scala:
+  - 2.12.7
+
