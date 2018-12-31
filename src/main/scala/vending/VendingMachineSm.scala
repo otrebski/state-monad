@@ -12,10 +12,10 @@ import vending.Domain._
 object VendingMachineSm {
 
   def process(action: Action, vendingMachineState: VendingMachineState): (VendingMachineState, ActionResult) = {
-    process(action).run(vendingMachineState).value
+    buildMonad(action).run(vendingMachineState).value
   }
 
-  def process(action: Action): State[VendingMachineState, ActionResult] =
+  def buildMonad(action: Action): State[VendingMachineState, ActionResult] =
     for {
       updateResult <- updateCredit(action)
       //  result ⬅  application()

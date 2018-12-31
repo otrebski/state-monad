@@ -25,8 +25,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
     "successfully buy and give change" in {
       val (state, results) = (for {
-        _ <- VendingMachineSm.process(Credit(10))
-        r <- VendingMachineSm.process(SelectProduct("1"))
+        _ <- VendingMachineSm.buildMonad(Credit(10))
+        r <- VendingMachineSm.buildMonad(SelectProduct("1"))
       } yield r).run(vendingMachineState).value
 
       state.quantity.get(beer) shouldBe Some(4)
@@ -35,8 +35,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
     "refuse to buy if not enough of money" in {
       val (state, results) = (for {
-        _ <- VendingMachineSm.process(Credit(1))
-        r <- VendingMachineSm.process(SelectProduct("1"))
+        _ <- VendingMachineSm.buildMonad(Credit(1))
+        r <- VendingMachineSm.buildMonad(SelectProduct("1"))
       } yield r).run(vendingMachineState).value
 
       state.quantity.get(beer) shouldBe Some(5)
@@ -46,8 +46,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
     "refuse to buy for wrong product selection" in {
       val (state, results) = (for {
-        _ <- VendingMachineSm.process(Credit(1))
-        r <- VendingMachineSm.process(SelectProduct("3"))
+        _ <- VendingMachineSm.buildMonad(Credit(1))
+        r <- VendingMachineSm.buildMonad(SelectProduct("3"))
       } yield r).run(vendingMachineState).value
 
       state.quantity.get(beer) shouldBe Some(5)
@@ -57,8 +57,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
     "refuse to buy if out of stock" in {
       val (state, results) = (for {
-        _ <- VendingMachineSm.process(Credit(10))
-        r <- VendingMachineSm.process(SelectProduct("1"))
+        _ <- VendingMachineSm.buildMonad(Credit(10))
+        r <- VendingMachineSm.buildMonad(SelectProduct("1"))
       } yield r).run(vendingMachineState.copy(quantity = Map(beer -> 0))).value
 
       state.quantity.get(beer) shouldBe Some(0)
@@ -69,10 +69,10 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "track income" in {
       val (state, _) = (
         for {
-          _ <- VendingMachineSm.process(Credit(10))
-          _ <- VendingMachineSm.process(SelectProduct("1"))
-          _ <- VendingMachineSm.process(Credit(10))
-          _ <- VendingMachineSm.process(SelectProduct("1"))
+          _ <- VendingMachineSm.buildMonad(Credit(10))
+          _ <- VendingMachineSm.buildMonad(SelectProduct("1"))
+          _ <- VendingMachineSm.buildMonad(Credit(10))
+          _ <- VendingMachineSm.buildMonad(SelectProduct("1"))
         } yield ()
         ).run(vendingMachineState).value
 
@@ -82,8 +82,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "track credit" in {
       val (state, (result0, result1)) = (
         for {
-          r1 <- VendingMachineSm.process(Credit(10))
-          r2 <- VendingMachineSm.process(Credit(1))
+          r1 <- VendingMachineSm.buildMonad(Credit(10))
+          r2 <- VendingMachineSm.buildMonad(Credit(1))
         } yield (r1, r2)).run(vendingMachineState).value
 
       result0.userOutputs.head shouldBe CreditInfo(10)
@@ -94,8 +94,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "give back all money if withdraw" in {
       val (state, _) = (
         for {
-          _ <- VendingMachineSm.process(Credit(10))
-          _ <- VendingMachineSm.process(Withdrawn)
+          _ <- VendingMachineSm.buildMonad(Credit(10))
+          _ <- VendingMachineSm.buildMonad(Withdrawn)
         } yield ()).run(vendingMachineState).value
 
       state.credit shouldBe 0
@@ -104,8 +104,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "report if money box is almost full" in {
       val (_, result) = (
         for {
-          _ <- VendingMachineSm.process(Credit(200))
-          r <- VendingMachineSm.process(SelectProduct("2"))
+          _ <- VendingMachineSm.buildMonad(Credit(200))
+          r <- VendingMachineSm.buildMonad(SelectProduct("2"))
         } yield r).run(vendingMachineState).value
 
       result.systemReports.contains(MoneyBoxAlmostFull(100)) shouldBe true
@@ -114,8 +114,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "report shortage of product" in {
       val (_, result) = (
         for {
-          _ <- VendingMachineSm.process(Credit(200))
-          r <- VendingMachineSm.process(SelectProduct("2"))
+          _ <- VendingMachineSm.buildMonad(Credit(200))
+          r <- VendingMachineSm.buildMonad(SelectProduct("2"))
         } yield r).run(vendingMachineState).value
 
       result.systemReports.contains(NotifyAboutShortage(pizza)) shouldBe true
@@ -124,8 +124,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
     "report issues with expiry date" in {
       val (state, (result1, result2)) = (
         for {
-          r1 <- VendingMachineSm.process(CheckExpiryDate)
-          r2 <- VendingMachineSm.process(CheckExpiryDate)
+          r1 <- VendingMachineSm.buildMonad(CheckExpiryDate)
+          r2 <- VendingMachineSm.buildMonad(CheckExpiryDate)
         } yield (r1, r2)).run(vendingMachineState.copy(now = LocalDate.of(2019, 1, 1))).value
 
       result1.systemReports.contains(ExpiredProducts(List(pizza))) shouldBe true
