@@ -203,7 +203,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       underTest ! SelectProduct("1")
       userOutput.expectMsg(GiveProductAndChange(beer, 0))
       userOutput.expectMsgType[Display]
-      reports.expectMsg(NotifyAboutShortage(beer))
+      reports.expectMsg(ProductShortage(beer))
 
     }
 

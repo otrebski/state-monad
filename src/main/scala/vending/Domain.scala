@@ -26,7 +26,7 @@ object Domain {
   sealed trait SystemReporting
 
   case class MoneyBoxAlmostFull(amount: Int) extends SystemReporting
-  case class NotifyAboutShortage(products: Product) extends SystemReporting
+  case class ProductShortage(products: Product) extends SystemReporting
   case class ExpiredProducts(products: List[Product]) extends SystemReporting
 
   case class ActionResult(userOutputs: List[UserOutput] = List.empty,

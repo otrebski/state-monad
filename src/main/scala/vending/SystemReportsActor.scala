@@ -5,7 +5,7 @@ import vending.Domain._
 
 class SystemReportsActor extends Actor {
   override def receive: Receive = {
-    case NotifyAboutShortage(product) =>
+    case ProductShortage(product) =>
       println(s" <To owner> We are short of ${product.symbol}".inBox())
     case MoneyBoxAlmostFull(amount) =>
       println(s" <To owner> We have ${amount}PLN in money box! Come and collect your profit!".inBox())

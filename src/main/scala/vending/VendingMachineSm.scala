@@ -80,13 +80,13 @@ object VendingMachineSm {
       }
     }
 
-  def detectShortage(): State[VendingMachineState, List[NotifyAboutShortage]] = {
-    State[VendingMachineState, List[NotifyAboutShortage]] { s =>
+  def detectShortage(): State[VendingMachineState, List[ProductShortage]] = {
+    State[VendingMachineState, List[ProductShortage]] { s =>
       val toNotify: Set[Product] = s.quantity.filter(_._2 == 0).keySet -- s.reportedShortage
       if (toNotify.isEmpty) {
-        (s, List.empty[NotifyAboutShortage])
+        (s, List.empty[ProductShortage])
       } else {
-        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(NotifyAboutShortage))
+        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(ProductShortage))
       }
     }
   }

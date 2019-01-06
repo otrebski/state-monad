@@ -111,14 +111,14 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       result.systemReports.contains(MoneyBoxAlmostFull(100)) shouldBe true
     }
 
-    "report shortage of product" in {
+    "detect shortage of product" in {
       val (_, result) = (
         for {
           _ <- VendingMachineSm.buildMonad(Credit(200), now)
           r <- VendingMachineSm.buildMonad(SelectProduct("2"), now)
         } yield r).run(vendingMachineState).value
 
-      result.systemReports.contains(NotifyAboutShortage(pizza)) shouldBe true
+      result.systemReports.contains(ProductShortage(pizza)) shouldBe true
     }
 
     "report issues with expiry date" in {
@@ -218,7 +218,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
     "detect shortage" in {
       val (_, results) = VendingMachineSm.detectShortage().run(state0).value
-      results shouldBe List(NotifyAboutShortage(beer))
+      results shouldBe List(ProductShortage(beer))
     }
 
     "ignore shortage for a second time" in {
@@ -227,7 +227,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         r2 <- VendingMachineSm.detectShortage()
       } yield (r1, r2)).run(state0).value
 
-      results._1 shouldBe List(NotifyAboutShortage(beer))
+      results._1 shouldBe List(ProductShortage(beer))
       results._2 shouldBe List.empty
     }
   }

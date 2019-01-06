@@ -52,7 +52,7 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
 
           userReportActor ! GiveProductAndChange(product, giveChange)
 
-          if (newQuantity == 0) reportsActor ! NotifyAboutShortage(product)
+          if (newQuantity == 0) reportsActor ! ProductShortage(product)
           if (income > 10) reportsActor ! MoneyBoxAlmostFull(income)
           userReportActor ! Display(currentState())
 
