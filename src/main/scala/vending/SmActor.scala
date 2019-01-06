@@ -28,7 +28,7 @@ class SmActor(quantity: Map[Product, Int],
 
   override def receive: Receive = {
     case a: Action =>
-      val (newState, results) = VendingMachineSm.process(a, vendingMachineState.copy(now = LocalDate.now()))
+      val (newState, results) = VendingMachineSm.process(a, LocalDate.now(), vendingMachineState)
       vendingMachineState = newState
       results.systemReports.foreach(reportsActor ! _)
       results.userOutputs.foreach(userReportActor ! _)
