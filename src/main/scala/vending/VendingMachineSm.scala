@@ -11,11 +11,12 @@ import vending.Domain._
 
 object VendingMachineSm {
 
-  def process(action: Action, vendingMachineState: VendingMachineState): (VendingMachineState, ActionResult) = {
-    buildMonad(action).run(vendingMachineState).value
+  def process(action: Action, now: LocalDate,
+              vendingMachineState: VendingMachineState): (VendingMachineState, ActionResult) = {
+    buildMonad(action, now).run(vendingMachineState).value
   }
 
-  def buildMonad(action: Action): State[VendingMachineState, ActionResult] =
+  def buildMonad(action: Action, now: LocalDate): State[VendingMachineState, ActionResult] =
     for {
       updateResult <- updateCredit(action)
       //  result ⬅  application()
@@ -26,7 +27,7 @@ object VendingMachineSm {
       maybeShortage <- detectShortage()
       //  result ⬅  application()
       //              ⬇ modified state
-      expiredResult <- checkExpiryDate(action)
+      expiredResult <- checkExpiryDate(action, now)
       //  result ⬅  application()
       //              ⬇ modified state
       maybeMbaf <- detectMoneyBoxAlmostFull()
@@ -90,12 +91,12 @@ object VendingMachineSm {
     }
   }
 
-  def checkExpiryDate(action: Action): State[VendingMachineState, Option[SystemReporting]] =
+  def checkExpiryDate(action: Action, now: LocalDate): State[VendingMachineState, Option[SystemReporting]] =
 
     State[VendingMachineState, Option[SystemReporting]] { s =>
       if (action == CheckExpiryDate) {
         val products = s.quantity.keys.filter { p =>
-          !p.expiryDate.isAfter(s.now) && !s.reportedExpiryDate.contains(p)
+          !p.expiryDate.isAfter(now) && !s.reportedExpiryDate.contains(p)
         }.toList
         val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
         val result = if (products.nonEmpty) ExpiredProducts(products).some else none[SystemReporting]
@@ -127,7 +128,6 @@ object VendingMachineSm {
   case class VendingMachineState(credit: Int,
                                  income: Int,
                                  quantity: Map[Product, Int] = Map.empty,
-                                 now: LocalDate = LocalDate.now(),
                                  reportedExpiryDate: Set[Domain.Product] = Set.empty[Domain.Product],
                                  reportedShortage: Set[Domain.Product] = Set.empty[Domain.Product]
                                 )

@@ -21,12 +21,12 @@ object Domain {
   case object WrongProduct extends UserOutput
   case class NotEnoughOfCredit(diff: Int) extends UserOutput
   case class OutOfStock(product: Product) extends UserOutput
-  case class NotifyAboutShortage(products: Product) extends SystemReporting
   case class GiveProductAndChange(selected: Product, change: Int) extends UserOutput
   case class Display(string: String) extends UserOutput
-
   sealed trait SystemReporting
+
   case class MoneyBoxAlmostFull(amount: Int) extends SystemReporting
+  case class NotifyAboutShortage(products: Product) extends SystemReporting
   case class ExpiredProducts(products: List[Product]) extends SystemReporting
 
   case class ActionResult(userOutputs: List[UserOutput] = List.empty,
