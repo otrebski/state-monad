@@ -2,13 +2,13 @@ package vending
 
 import java.time.LocalDate
 
+import scala.annotation.tailrec
 import scala.io.StdIn
+import scala.util.Try
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
-import scala.annotation.tailrec
-import scala.util.Try
 
 object VendingMachineDemo extends App {
 
@@ -40,7 +40,6 @@ object VendingMachineDemo extends App {
     """Pick Vending machine implementation:
       | 1 -> Logic in actor
       | 2 -> Logic in State Monad""".stripMargin)
-
 
   private def parseAction(line: String): Option[Action] = {
     import cats.syntax.option._
@@ -76,7 +75,7 @@ object VendingMachineDemo extends App {
   val reportsActor = system.actorOf(Props(new SystemReportsActor))
   val props = chooseActor(userOutputActor, reportsActor)
   val actor = system.actorOf(props, "vm")
-  actor  ! Credit(0)
+  actor ! Credit(0)
 
   @tailrec
   def loop(actor: ActorRef): Unit = {

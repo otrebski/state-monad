@@ -23,3 +23,5 @@ libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.5" % Test
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % Test
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+
+grollHistoryRef := "lambdadays_2019"
