@@ -65,8 +65,23 @@ class VendingMachineSmTest extends WordSpec with Matchers {
   }
 
   "select product monad" should {
-    "successfully buy product" in ???
-    "refuse to buy if not enough of money" in ???
+
+    val state0 = vendingMachineState.copy(
+      credit = 10
+    )
+    "successfully buy product" in {
+      val (state1, effects) = VendingMachineSm.selectProduct(SelectProduct(beer.code)).run(state0).value
+
+      state1.income shouldBe beer.price
+      effects shouldBe GiveProductAndChange(beer, 7).some
+    }
+    "refuse to buy if not enough of money" in {
+      val (state1, effects) = VendingMachineSm.selectProduct(SelectProduct(pizza.code)).run(state0).value
+
+      state1.income shouldBe 0
+      state1.credit shouldBe 10
+      effects shouldBe NotEnoughOfCredit(90).some
+    }
   }
 
   "detect shortage monad" should {
