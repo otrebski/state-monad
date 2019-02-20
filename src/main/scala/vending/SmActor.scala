@@ -1,7 +1,5 @@
 package vending
 
-import java.time.LocalDate
-
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -28,20 +26,6 @@ class SmActor(quantity: Map[Product, Int],
 
   override def receive: Receive = {
     case a: Action =>
-      val (newState, results) = VendingMachineSm
-        .compose(a, LocalDate.now()) //creating state monad for action
-        .run(vendingMachineState) //running state monad
-        .value  //collecting result
-
-      //updating state
-      vendingMachineState = newState
-
-      //Executing side effects
-      results.systemReports
-        .foreach(effect => reportsActor ! effect)
-
-      results.userOutputs
-        .foreach(effects => userReportActor ! effects)
 
     case GetState => sender() ! vendingMachineState
   }
