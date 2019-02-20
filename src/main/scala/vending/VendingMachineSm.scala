@@ -3,20 +3,21 @@ package vending
 import java.time.LocalDate
 
 import cats.data.State
-import cats.instances.list._
-import cats.syntax.monoid._
 import cats.syntax.option._
 import cats.syntax.show._
 import vending.Domain._
 
 object VendingMachineSm {
 
-  def process(action: Action, now: LocalDate,
-              vendingMachineState: VendingMachineState): (VendingMachineState, ActionResult) = {
-    buildMonad(action, now).run(vendingMachineState).value
-  }
+  //    State monad is function
+  // ╭----------------------------╮
+  // |  State => (State, Effect)  |
+  // ╰----------------------------╯
+  //
+  // In our case
+  // Vending machine state => (New vending machine state, effects)
 
-  def buildMonad(action: Action, now: LocalDate): State[VendingMachineState, ActionResult] =
+  def compose(action: Action, now: LocalDate): State[VendingMachineState, ActionResult] =
     for {
       updateResult <- updateCredit(action)
       //  result ⬅  application()
@@ -36,7 +37,7 @@ object VendingMachineSm {
       maybeDisplay <- maybeDisplayState(action)
     } yield ActionResult(
       userOutputs = List(updateResult, selectResult, maybeDisplay).flatten,
-      systemReports = List(expiredResult, maybeMbaf).flatten |+| maybeShortage
+      systemReports = List(expiredResult, maybeMbaf).flatten ++ maybeShortage
     )
 
   def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =

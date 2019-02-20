@@ -166,31 +166,6 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
     }
 
-    "do not report if money box is almost full  for a second time" ignore {
-      val userOutput = TestProbe("userOutput")
-      val reports = TestProbe("reports")
-      val underTest = createActor(quantity, userOutput.ref, reports.ref)
-
-      underTest ! Credit(100)
-      userOutput.expectMsg(CreditInfo(100))
-      userOutput.expectMsgType[Display]
-
-      underTest ! SelectProduct("2")
-      userOutput.expectMsg(GiveProductAndChange(pizza, 0))
-      userOutput.expectMsgType[Display]
-      reports.expectMsg(MoneyBoxAlmostFull(100))
-
-      underTest ! Credit(100)
-      userOutput.expectMsg(CreditInfo(100))
-      userOutput.expectMsgType[Display]
-
-      underTest ! SelectProduct("2")
-      userOutput.expectMsg(GiveProductAndChange(pizza, 0))
-      userOutput.expectMsgType[Display]
-
-      reports.expectNoMessage()
-    }
-
     "report shortage of product" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")

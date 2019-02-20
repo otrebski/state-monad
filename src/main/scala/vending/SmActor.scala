@@ -28,10 +28,20 @@ class SmActor(quantity: Map[Product, Int],
 
   override def receive: Receive = {
     case a: Action =>
-      val (newState, results) = VendingMachineSm.process(a, LocalDate.now(), vendingMachineState)
+      val (newState, results) = VendingMachineSm
+        .compose(a, LocalDate.now()) //creating state monad for action
+        .run(vendingMachineState) //running state monad
+        .value  //collecting result
+
+      //updating state
       vendingMachineState = newState
-      results.systemReports.foreach(reportsActor ! _)
-      results.userOutputs.foreach(userReportActor ! _)
+
+      //Executing side effects
+      results.systemReports
+        .foreach(effect => reportsActor ! effect)
+
+      results.userOutputs
+        .foreach(effects => userReportActor ! effects)
 
     case GetState => sender() ! vendingMachineState
   }

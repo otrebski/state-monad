@@ -50,6 +50,8 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
           income += product.price
           quantity = quantity.updated(product, newQuantity)
 
+          // -----------------------------
+          // Warning! Side effects below!
           userReportActor ! GiveProductAndChange(product, giveChange)
 
           if (newQuantity == 0) reportsActor ! ProductShortage(product)
