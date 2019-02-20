@@ -1,5 +1,7 @@
 package vending
 
+import java.time.LocalDate
+
 import cats.data.State
 import cats.syntax.option._
 import cats.syntax.show._
@@ -15,7 +17,7 @@ object VendingMachineSm {
   // In our case
   // Vending machine state => (New vending machine state, effects)
 
-  def compose(action: Action): State[VendingMachineState, ActionResult] =
+  def compose(action: Action, now: LocalDate): State[VendingMachineState, ActionResult] =
     for {
       updateResult <- updateCredit(action)
       //  effect ⬅  application()
@@ -23,8 +25,20 @@ object VendingMachineSm {
       selectResult <- selectProduct(action)
       //  effect ⬅  application()
       //              ⬇ modified state
+      maybeShortage <- detectShortage()
+      //  effect ⬅  application()
+      //              ⬇ modified state
+      expiredResult <- checkExpiryDate(action, now)
+      //  reseffectult ⬅  application()
+      //              ⬇ modified state
+      maybeMbaf <- detectMoneyBoxAlmostFull()
+      //  effect ⬅  application()
+      //              ⬇ modified state
       maybeDisplay <- maybeDisplayState(action)
-    } yield ActionResult(List(updateResult, selectResult, maybeDisplay).flatten)
+    } yield ActionResult(
+      userOutputs = List(updateResult, selectResult, maybeDisplay).flatten,
+      systemReports = List(expiredResult, maybeMbaf).flatten ++ maybeShortage
+    )
 
   def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =
     State[VendingMachineState, Option[UserOutput]] { s =>
@@ -66,6 +80,42 @@ object VendingMachineSm {
         case _ => (s, none[UserOutput])
       }
     }
+
+  def detectShortage(): State[VendingMachineState, List[ProductShortage]] = {
+    State[VendingMachineState, List[ProductShortage]] { s =>
+      val toNotify: Set[Product] = s.quantity.filter(_._2 == 0).keySet -- s.reportedShortage
+      if (toNotify.isEmpty) {
+        (s, List.empty[ProductShortage])
+      } else {
+        (s.copy(reportedShortage = s.reportedShortage ++ toNotify), toNotify.toList.map(ProductShortage))
+      }
+    }
+  }
+
+  def checkExpiryDate(action: Action, now: LocalDate): State[VendingMachineState, Option[SystemReporting]] =
+
+    State[VendingMachineState, Option[SystemReporting]] { s =>
+      if (action == CheckExpiryDate) {
+        val products = s.quantity.keys.filter { p =>
+          !p.expiryDate.isAfter(now) && !s.reportedExpiryDate.contains(p)
+        }.toList
+        val newState = s.copy(reportedExpiryDate = s.reportedExpiryDate ++ products)
+        val result = if (products.nonEmpty) ExpiredProducts(products).some else none[SystemReporting]
+        (newState, result)
+      } else {
+        (s, none[SystemReporting])
+      }
+    }
+
+  def detectMoneyBoxAlmostFull(): State[VendingMachineState, Option[MoneyBoxAlmostFull]] = {
+    State[VendingMachineState, Option[MoneyBoxAlmostFull]] { s =>
+      if (s.income > 10) {
+        (s, MoneyBoxAlmostFull(s.income).some)
+      } else {
+        (s, none[MoneyBoxAlmostFull])
+      }
+    }
+  }
 
   def maybeDisplayState(action: Action): State[VendingMachineState, Option[Display]] =
     State[VendingMachineState, Option[Display]] { s =>
