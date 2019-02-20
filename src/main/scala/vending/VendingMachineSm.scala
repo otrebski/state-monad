@@ -2,8 +2,8 @@ package vending
 
 import cats.data.State
 import cats.syntax.option._
-import vending.Domain._
 import cats.syntax.show._
+import vending.Domain._
 
 object VendingMachineSm {
 
@@ -15,6 +15,16 @@ object VendingMachineSm {
   // In our case
   // Vending machine state => (New vending machine state, effects)
 
+  def compose(action: Action): State[VendingMachineState, ActionResult] =
+    for {
+      updateResult <- updateCredit(action)
+      //  effect ⬅  application()
+      //              ⬇ modified state
+      selectResult <- selectProduct(action)
+      //  effect ⬅  application()
+      //              ⬇ modified state
+      maybeDisplay <- maybeDisplayState(action)
+    } yield ActionResult(List(updateResult, selectResult, maybeDisplay).flatten)
 
   def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =
     State[VendingMachineState, Option[UserOutput]] { s =>

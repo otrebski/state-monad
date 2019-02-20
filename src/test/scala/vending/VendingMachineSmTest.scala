@@ -21,13 +21,85 @@ class VendingMachineSmTest extends WordSpec with Matchers {
   )
 
   "Vending machine" should {
-    "successfully buy and give change" in ???
-    "refuse to buy if not enough of money" in ???
-    "refuse to buy for wrong product selection" in ???
-    "refuse to buy if out of stock" in ???
-    "track income" in ???
-    "track credit" in ???
-    "give back all money if withdraw" in ???
+
+    "successfully buy and give change" in {
+      val (state, effects) = (for {
+        _ <- VendingMachineSm.compose(Credit(10))
+        e <- VendingMachineSm.compose(SelectProduct("1"))
+      } yield e).run(vendingMachineState).value
+
+      state.quantity.get(beer) shouldBe Some(4)
+      effects.userOutputs.contains(GiveProductAndChange(beer, 7)) shouldBe true
+    }
+
+    "refuse to buy if not enough of money" in {
+      val (state, effects) = (for {
+        _ <- VendingMachineSm.compose(Credit(1))
+        e <- VendingMachineSm.compose(SelectProduct("1"))
+      } yield e).run(vendingMachineState).value
+
+      state.quantity.get(beer) shouldBe Some(5)
+      state.credit shouldBe 1
+      effects.userOutputs.contains(NotEnoughOfCredit(2)) shouldBe true
+    }
+
+    "refuse to buy for wrong product selection" in {
+      val (state, effects) = (for {
+        _ <- VendingMachineSm.compose(Credit(1))
+        e <- VendingMachineSm.compose(SelectProduct("3"))
+      } yield e).run(vendingMachineState).value
+
+      state.quantity.get(beer) shouldBe Some(5)
+      state.credit shouldBe 1
+      effects.userOutputs.contains(WrongProduct) shouldBe true
+    }
+
+    "refuse to buy if out of stock" in {
+      val (state, effects) = (for {
+        _ <- VendingMachineSm.compose(Credit(10))
+        e <- VendingMachineSm.compose(SelectProduct("1"))
+      } yield e).run(vendingMachineState.copy(quantity = Map(beer -> 0))).value
+
+      state.quantity.get(beer) shouldBe Some(0)
+      state.credit shouldBe 10
+      effects.userOutputs.contains(OutOfStock(beer)) shouldBe true
+    }
+
+    "track income" in {
+      val (state, _) = (
+        for {
+          _ <- VendingMachineSm.compose(Credit(10))
+          _ <- VendingMachineSm.compose(SelectProduct("1"))
+          _ <- VendingMachineSm.compose(Credit(10))
+          _ <- VendingMachineSm.compose(SelectProduct("1"))
+        } yield ()
+        ).run(vendingMachineState).value
+
+      state.income shouldBe 6
+    }
+
+    "track credit" in {
+      val (state, (effects1, effects2)) = (
+        for {
+          e1 <- VendingMachineSm.compose(Credit(10))
+          e2 <- VendingMachineSm.compose(Credit(1))
+        } yield (e1, e2)).run(vendingMachineState).value
+
+      effects1.userOutputs.head shouldBe CreditInfo(10)
+      effects2.userOutputs.head shouldBe CreditInfo(11)
+      state.credit shouldBe 11
+    }
+
+    "give back all money if withdraw" in {
+      val (state, _) = (
+        for {
+          _ <- VendingMachineSm.compose(Credit(10))
+          _ <- VendingMachineSm.compose(Withdrawn)
+        } yield ()).run(vendingMachineState).value
+
+      state.credit shouldBe 0
+    }
+
     "report if money box is almost full" in ???
     "detect shortage of product" in ???
     "report issues with expiry date" in ???
