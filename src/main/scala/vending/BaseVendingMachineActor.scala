@@ -10,9 +10,10 @@ import cats.syntax.show._
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
-class BaseVendingMachineActor(var quantity: Map[Product, Int],
-                              userReportActor: ActorRef,
-                              reportsActor: ActorRef
+class BaseVendingMachineActor(
+                               var quantity: Map[Product, Int],
+                               userReportActor: ActorRef,
+                               reportsActor: ActorRef
                              ) extends Actor {
 
   var credit: Int = 0
@@ -26,37 +27,22 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
   }
 
   override def receive: Receive = {
-
-    case Credit(value) =>
-      credit += value
-      userReportActor ! CreditInfo(credit)
-      userReportActor ! Display(currentState())
-
-    case Withdrawn =>
-      credit = 0
-      userReportActor ! CollectYourMoney
-      userReportActor ! Display(currentState())
-
     case SelectProduct(number) =>
       val selected = number.toString
       val maybeProduct = quantity.keys.find(_.code == selected)
       val maybeQuantity = maybeProduct.map(quantity)
       (maybeProduct, maybeQuantity) match {
         case (Some(product), Some(q)) if product.price <= credit && q > 0 =>
-          val giveChange = credit - product.price
-          val newQuantity = q - 1
+          val giveChange = credit - product.price            // calculating new state
+          val newQuantity = q - 1                            // .....................
+          credit = 0                                         // Changing internal state
+          income += product.price                            // .......................
+          quantity = quantity.updated(product, newQuantity)  // ......................
 
-          credit = 0
-          income += product.price
-          quantity = quantity.updated(product, newQuantity)
-
-          // -----------------------------
-          // Warning! Side effects below!
-          userReportActor ! GiveProductAndChange(product, giveChange)
-
-          if (newQuantity == 0) reportsActor ! ProductShortage(product)
-          if (income > 10) reportsActor ! MoneyBoxAlmostFull(income)
-          userReportActor ! Display(currentState())
+          userReportActor ! GiveProductAndChange(product, giveChange)   //Execute side effects
+          if (newQuantity == 0) reportsActor ! ProductShortage(product) //....................
+          if (income > 10) reportsActor ! MoneyBoxAlmostFull(income)    //....................
+          userReportActor ! Display(currentState())                     //....................
 
         case (Some(product), Some(q)) if q < 1 =>
           userReportActor ! OutOfStock(product)
@@ -69,6 +55,17 @@ class BaseVendingMachineActor(var quantity: Map[Product, Int],
           userReportActor ! WrongProduct
           userReportActor ! Display(currentState())
       }
+
+
+    case Credit(value) =>
+      credit += value
+      userReportActor ! CreditInfo(credit)
+      userReportActor ! Display(currentState())
+
+    case Withdrawn =>
+      credit = 0
+      userReportActor ! CollectYourMoney
+      userReportActor ! Display(currentState())
 
     case CheckExpiryDate =>
       val now = LocalDate.now()
