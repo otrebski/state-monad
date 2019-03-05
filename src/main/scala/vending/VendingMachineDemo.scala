@@ -39,7 +39,8 @@ object VendingMachineDemo extends App {
   println(
     """Pick Vending machine implementation:
       | 1 -> Logic in actor
-      | 2 -> Logic in State Monad""".stripMargin)
+      | 2 -> Logic in State Monad
+      | 3 -> Logic in State Monad with persistence  """.stripMargin)
 
   private def parseAction(line: String): Option[Action] = {
     import cats.syntax.option._
@@ -64,6 +65,10 @@ object VendingMachineDemo extends App {
         userOutputActor,
         reportsActor))
       case "2" => Props(new SmActor(
+        vendingMachineState.quantity,
+        userOutputActor,
+        reportsActor))
+      case "3" => Props(new SmPersistentActor("p")(
         vendingMachineState.quantity,
         userOutputActor,
         reportsActor))

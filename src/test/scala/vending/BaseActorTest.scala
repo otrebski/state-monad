@@ -32,20 +32,23 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
   "Actor" should {
 
     "successfully buy and give change" in {
-      val userOutput = TestProbe("userOutput")
-      val reports = TestProbe("reports")
+      //given
+      val userOutput = TestProbe("userOutput") //Create mocks
+      val reports = TestProbe("reports")       //............
       val underTest = createActor(quantity, userOutput.ref, reports.ref)
-      underTest ! Credit(10)
-      userOutput.expectMsg(CreditInfo(10))
-      userOutput.expectMsgType[Display]
-      underTest ! SelectProduct("1")
+      underTest ! Credit(10)               // Prepare internal state
+      userOutput.expectMsg(CreditInfo(10)) // ......................
+      userOutput.expectMsgType[Display]    // ......................
 
-      userOutput.expectMsg(GiveProductAndChange(beer, 7))
-      userOutput.expectMsgType[Display]
+      //when
+      underTest ! SelectProduct("1")       // Invoke logic
+
+      //then
+      userOutput.expectMsg(GiveProductAndChange(beer, 7)) //Check mocks
+      userOutput.expectMsgType[Display]                   //...........
 
       val state = Await.result((underTest ? GetState).mapTo[VendingMachineState], 3 seconds)
-      state.quantity.get(beer) shouldBe Some(4)
-
+      state.quantity.get(beer) shouldBe Some(4)  //Check actor internal state
     }
 
     "refuse to buy if not enough of money" in {
