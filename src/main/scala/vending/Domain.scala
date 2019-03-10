@@ -23,8 +23,8 @@ object Domain {
   case class OutOfStock(product: Product) extends UserOutput
   case class GiveProductAndChange(selected: Product, change: Int) extends UserOutput
   case class Display(string: String) extends UserOutput
-  sealed trait SystemReporting
 
+  sealed trait SystemReporting
   case class MoneyBoxAlmostFull(amount: Int) extends SystemReporting
   case class ProductShortage(products: Product) extends SystemReporting
   case class ExpiredProducts(products: List[Product]) extends SystemReporting

@@ -9,9 +9,9 @@ import vending.VendingMachineSm.VendingMachineState
 
 class VendingMachineSmTest extends WordSpec with Matchers {
 
+  val now: LocalDate = LocalDate.of(2018, 10, 1)
   private val beer = Product(3, "1", Symbols.beer, LocalDate.of(2020, 12, 10))
   private val pizza = Product(100, "2", Symbols.pizza, LocalDate.of(2018, 12, 10))
-
   var vendingMachineState = VendingMachineState(
     credit = 0, income = 0,
     quantity = Map(
@@ -19,7 +19,6 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       pizza -> 1
     )
   )
-  val now: LocalDate = LocalDate.of(2018, 10, 1)
 
   "Vending machine" should {
 

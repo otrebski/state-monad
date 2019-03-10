@@ -35,6 +35,7 @@ class BaseVendingMachineActor(
         case (Some(product), Some(q)) if product.price <= credit && q > 0 =>
           val giveChange = credit - product.price            // calculating new state
           val newQuantity = q - 1                            // .....................
+
           credit = 0                                         // Changing internal state
           income += product.price                            // .......................
           quantity = quantity.updated(product, newQuantity)  // ......................
@@ -55,7 +56,6 @@ class BaseVendingMachineActor(
           userReportActor ! WrongProduct
           userReportActor ! Display(currentState())
       }
-
 
     case Credit(value) =>
       credit += value
@@ -78,6 +78,7 @@ class BaseVendingMachineActor(
       }
 
     case GetState =>
+
       val vm = VendingMachineState(
         credit, income,
         quantity,
