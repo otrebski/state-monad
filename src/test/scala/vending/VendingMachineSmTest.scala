@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import cats.syntax.option._
 import org.scalatest.{Matchers, WordSpec}
-import vending.Domain._
+import vending.Domain.{_}
 import vending.VendingMachineSm.VendingMachineState
 
 class VendingMachineSmTest extends WordSpec with Matchers {
@@ -29,7 +29,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       } yield e).run(vendingMachineState).value
 
       state.quantity.get(beer) shouldBe Some(4)
-      effects.userOutputs.contains(GiveProductAndChange(beer, 7)) shouldBe true
+      effects.userOutputs should contain(GiveProductAndChange(beer, 7))
     }
 
     "refuse to buy if not enough of money" in {
@@ -40,7 +40,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
       state.quantity.get(beer) shouldBe Some(5)
       state.credit shouldBe 1
-      effects.userOutputs.contains(NotEnoughOfCredit(2)) shouldBe true
+      effects.userOutputs should contain(NotEnoughOfCredit(2))
     }
 
     "refuse to buy for wrong product selection" in {
@@ -51,7 +51,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
       state.quantity.get(beer) shouldBe Some(5)
       state.credit shouldBe 1
-      effects.userOutputs.contains(WrongProduct) shouldBe true
+      effects.userOutputs should contain(WrongProduct)
     }
 
     "refuse to buy if out of stock" in {
@@ -62,7 +62,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
 
       state.quantity.get(beer) shouldBe Some(0)
       state.credit shouldBe 10
-      effects.userOutputs.contains(OutOfStock(beer)) shouldBe true
+      effects.userOutputs should contain(OutOfStock(beer))
     }
 
     "track income" in {
@@ -107,7 +107,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
           e <- VendingMachineSm.compose(SelectProduct("2"), now)
         } yield e).run(vendingMachineState).value
 
-      effects.systemReports.contains(MoneyBoxAlmostFull(100)) shouldBe true
+      effects.systemReports should contain(MoneyBoxAlmostFull(100))
     }
 
     "detect shortage of product" in {
@@ -117,7 +117,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
           e <- VendingMachineSm.compose(SelectProduct("2"), now)
         } yield e).run(vendingMachineState).value
 
-      effects.systemReports.contains(ProductShortage(pizza)) shouldBe true
+      effects.systemReports should contain(ProductShortage(pizza))
     }
 
     "report issues with expiry date" in {
@@ -128,8 +128,8 @@ class VendingMachineSmTest extends WordSpec with Matchers {
           e2 <- VendingMachineSm.compose(CheckExpiryDate, now)
         } yield (e1, e2)).run(vendingMachineState).value
 
-      effects1.systemReports.contains(ExpiredProducts(List(pizza))) shouldBe true
-      effects2.systemReports.contains(ExpiredProducts(List(pizza))) shouldBe false
+      effects1.systemReports should contain(ExpiredProducts(List(pizza)))
+      effects2.systemReports should not contain (ExpiredProducts(List(pizza)))
       state.reportedExpiryDate should contain(pizza)
     }
 
