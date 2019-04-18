@@ -3,6 +3,7 @@ package vending
 import java.time.LocalDate
 
 import scala.annotation.tailrec
+import cats.syntax.option._
 import scala.io.StdIn
 import scala.util.Try
 
@@ -62,16 +63,19 @@ object VendingMachineDemo extends App {
     answer match {
       case "1" => Props(new BaseVendingMachineActor(
         vendingMachineState.quantity,
-        userOutputActor,
-        reportsActor))
+        userOutputActor.some,
+        reportsActor,
+        userOutputActor))
       case "2" => Props(new SmActor(
         vendingMachineState.quantity,
-        userOutputActor,
-        reportsActor))
+        userOutputActor.some,
+        reportsActor,
+        userOutputActor))
       case "3" => Props(new SmPersistentActor("p")(
         vendingMachineState.quantity,
-        userOutputActor,
-        reportsActor))
+        userOutputActor.some,
+        reportsActor,
+        userOutputActor))
       case _ => chooseActor(userOutputActor, reportsActor)
     }
   }

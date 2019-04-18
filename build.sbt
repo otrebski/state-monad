@@ -1,3 +1,5 @@
+enablePlugins(JavaAppPackaging)
+
 name := "state-monad"
 version := "0.1"
 
@@ -18,7 +20,14 @@ libraryDependencies += "org.typelevel" %% "cats-core" % "1.4.0"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.5.21",
   "com.typesafe.akka" %% "akka-persistence" % "2.5.21",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.21" % Test
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.21" % Test,
+  "com.typesafe.akka" %% "akka-http" % "10.1.8",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.21",
+//  "de.heikoseeberger" %% "akka-http-circe" % "1.25.2",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
+//  "io.circe" %% "circe-core" % "0.11.1",
+//  "io.circe" %% "circe-generic" % "0.11.1",
+//  "io.circe" %% "circe-parser" % "0.11.1"
 )
 
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -36,3 +45,6 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % Test
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 
 grollHistoryRef := "lambdadays_2019"
+
+mainClass := Some("vending.http.Server")
+

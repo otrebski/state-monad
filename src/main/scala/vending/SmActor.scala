@@ -10,8 +10,9 @@ import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
 class SmActor(quantity: Map[Product, Int],
-              userReportActor: ActorRef,
-              reportsActor: ActorRef)
+              userReportActor: Option[ActorRef],
+              reportsActor: ActorRef,
+              statePublisher: ActorRef)
   extends Actor {
 
   var vendingMachineState = VendingMachineState(
@@ -41,7 +42,9 @@ class SmActor(quantity: Map[Product, Int],
         .foreach(effect => reportsActor ! effect)
 
       results.userOutputs
-        .foreach(effects => userReportActor ! effects)
+        .foreach(effects => userReportActor.getOrElse(sender()) ! effects)
+
+      results.displayState.foreach(statePublisher ! _)
 
     case GetState => sender() ! vendingMachineState
   }

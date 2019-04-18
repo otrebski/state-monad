@@ -1,0 +1,16 @@
+GET http://127.0.0.1:8080/api/sm/1/select/1
+
+####
+GET http://127.0.0.1:8080/api/sm/1/credit/56
+
+####
+GET http://127.0.0.1:8080/api/sm/1/withdrawn
+
+####
+GET http://127.0.0.1:8080/api/sm/1/status
+####
+
+GET http://127.0.0.1:8080/api/sm/1/events
+
+###
+

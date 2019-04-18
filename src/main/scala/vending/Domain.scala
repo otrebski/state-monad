@@ -3,6 +3,7 @@ package vending
 import java.time.LocalDate
 
 import cats.kernel.Monoid
+import vending.VendingMachineSm.VendingMachineState
 
 object Domain {
 
@@ -22,16 +23,18 @@ object Domain {
   case class NotEnoughOfCredit(diff: Int) extends UserOutput
   case class OutOfStock(product: Product) extends UserOutput
   case class GiveProductAndChange(selected: Product, change: Int) extends UserOutput
-  case class Display(string: String) extends UserOutput
+
+  case class Display(vendingMachineState: VendingMachineState)
 
   sealed trait SystemReporting
   case class MoneyBoxAlmostFull(amount: Int) extends SystemReporting
-  case class ProductShortage(products: Product) extends SystemReporting
+  case class ProductShortage(product: Product) extends SystemReporting
   case class ExpiredProducts(products: List[Product]) extends SystemReporting
 
   case class ActionResult(userOutputs: List[UserOutput] = List.empty,
-                          systemReports: List[SystemReporting] = List.empty) {
-    def nonEmpty(): Boolean = userOutputs.nonEmpty || systemReports.nonEmpty
+                          systemReports: List[SystemReporting] = List.empty,
+                          displayState: Option[Display] = None) {
+    def nonEmpty(): Boolean = userOutputs.nonEmpty || systemReports.nonEmpty || displayState.nonEmpty
   }
 
   object ActionResult {

@@ -4,7 +4,6 @@ import java.time.LocalDate
 
 import cats.data.State
 import cats.syntax.option._
-import cats.syntax.show._
 import vending.Domain._
 
 object VendingMachineSm {
@@ -36,8 +35,9 @@ object VendingMachineSm {
       //              ⬇ modified state
       maybeDisplay <- maybeDisplayState(action)
     } yield ActionResult(
-      userOutputs = List(updateResult, selectResult, maybeDisplay).flatten,
-      systemReports = List(expiredResult, maybeMbaf).flatten ++ maybeShortage
+      userOutputs = List(updateResult, selectResult).flatten,
+      systemReports = List(expiredResult, maybeMbaf).flatten ++ maybeShortage,
+      displayState = maybeDisplay
     )
 
   def updateCredit(action: Action): State[VendingMachineState, Option[UserOutput]] =
@@ -120,7 +120,7 @@ object VendingMachineSm {
   def maybeDisplayState(action: Action): State[VendingMachineState, Option[Display]] =
     State[VendingMachineState, Option[Display]] { s =>
       val r = action match {
-        case Credit(_) | Withdrawn | SelectProduct(_) => Display(s.show).some
+        case Credit(_) | Withdrawn | SelectProduct(_) => Display(s).some
         case _ => None
       }
       (s, r)
