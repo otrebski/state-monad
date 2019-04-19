@@ -44,7 +44,8 @@ object Server extends App {
       .toMat(BroadcastHub.sink[ServerSentEvent])(Keep.both)
       .run()
 
-  val baseActorMap: Map[Int, ActorWithStream] = (0 to 100)
+  private val vmCount = 1000
+  val baseActorMap: Map[Int, ActorWithStream] = (0 to vmCount)
     .map { i =>
       val (sourceQueue, eventsSource) = stream()
       val actorRef = system
@@ -57,7 +58,7 @@ object Server extends App {
     }
     .toMap
 
-  val smActorMap: Map[Int, ActorWithStream] = (0 to 100)
+  val smActorMap: Map[Int, ActorWithStream] = (0 to vmCount)
     .map(i => {
       val (sourceQueue, eventsSource) = stream()
       val actor = system
