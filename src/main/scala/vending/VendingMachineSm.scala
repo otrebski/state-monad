@@ -109,7 +109,7 @@ object VendingMachineSm {
 
   def detectMoneyBoxAlmostFull(): State[VendingMachineState, Option[MoneyBoxAlmostFull]] = {
     State[VendingMachineState, Option[MoneyBoxAlmostFull]] { s =>
-      if (s.income > 10) {
+      if (s.income > 1000) {
         (s, MoneyBoxAlmostFull(s.income).some)
       } else {
         (s, none[MoneyBoxAlmostFull])

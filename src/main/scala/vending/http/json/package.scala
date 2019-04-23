@@ -24,9 +24,10 @@ package object json extends SprayJsonSupport with DefaultJsonProtocol {
     case class OutOfStockV1(code: String, messageType: String = "OutOfStockV1") extends ResultV1
     case class GiveProductAndChangeV1(code: String, change: Int, messageType: String = "GiveProductAndChangeV1") extends ResultV1
 
+    case class ProductWithQuantityV1(code: String, symbol: String, price: Int, quantity: Int)
     case class VendingMachineStateV1(credit: Int,
                                      income: Int,
-                                     quantity: Map[String, Int] = Map.empty,
+                                     quantity: List[ProductWithQuantityV1] = List.empty,
                                      reportedExpiryDate: Set[Domain.Product] = Set.empty[Domain.Product],
                                      reportedShortage: Set[Domain.Product] = Set.empty[Domain.Product]
                                     )
@@ -35,7 +36,7 @@ package object json extends SprayJsonSupport with DefaultJsonProtocol {
         VendingMachineStateV1(
           credit = vm.credit,
           income = vm.income,
-          quantity = vm.quantity.map(kv => kv._1.code -> kv._2),
+          quantity = vm.quantity.map(kv => ProductWithQuantityV1(kv._1.code,kv._1.symbol,kv._1.price,kv._2)).toList,
           reportedExpiryDate = vm.reportedExpiryDate,
           reportedShortage = vm.reportedShortage
         )
@@ -65,7 +66,8 @@ package object json extends SprayJsonSupport with DefaultJsonProtocol {
       }
     }
     implicit val productFormat: RootJsonFormat[Product] = jsonFormat4(Product)
-//    implicit val vmStateFormat: RootJsonFormat[VendingMachineState] = jsonFormat5(VendingMachineState)
+    //    implicit val vmStateFormat: RootJsonFormat[VendingMachineState] = jsonFormat5(VendingMachineState)
+    implicit val productWithQuantityV1Format: RootJsonFormat[ProductWithQuantityV1] = jsonFormat4(ProductWithQuantityV1)
     implicit val vmStateFormat: RootJsonFormat[VendingMachineStateV1] = jsonFormat5(VendingMachineStateV1.apply)
     implicit val displayFormat: RootJsonFormat[DisplayV1] = jsonFormat2(DisplayV1)
     implicit val moneyBoxAlmostFullV1Format: RootJsonFormat[MoneyBoxAlmostFullV1] = jsonFormat2(MoneyBoxAlmostFullV1)
