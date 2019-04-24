@@ -16,23 +16,23 @@
 
 package io.gatling.core.stats.writer
 
-import java.io.{File, RandomAccessFile}
+import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
-import java.nio.charset.CharsetEncoder
+import java.nio.charset.{CharsetEncoder, StandardCharsets}
 import java.nio.file.{FileSystems, Path}
 import java.nio.{ByteBuffer, CharBuffer}
 
-import com.sun.codemodel.internal.util.EncoderFactory
 import io.gatling.core.util.Longs
 
 object BufferedFileChannelWriter {
 
   def apply(runId: String): BufferedFileChannelWriter = {
-    val encoder: CharsetEncoder = EncoderFactory.createEncoder("US_ASCII")
-    new File(s"out/$runId").mkdirs()
+    val encoder: CharsetEncoder = StandardCharsets.US_ASCII.newEncoder()
+    //    Charset.forName("US_ASCII").newEncoder()
+    //    new File(s"out/$runId").mkdirs()
     val simulationLog: Path = FileSystems.getDefault.getPath("out", runId, "simulation.log")
     val channel = new RandomAccessFile(simulationLog.toFile, "rw").getChannel
-    val bb = ByteBuffer.allocate(100*1024) //TODO increase
+    val bb = ByteBuffer.allocate(100 * 1024) //TODO increase
     new BufferedFileChannelWriter(channel, encoder, bb)
   }
 
