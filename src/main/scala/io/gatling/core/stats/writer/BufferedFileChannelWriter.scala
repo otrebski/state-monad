@@ -111,6 +111,7 @@ final class BufferedFileChannelWriter(channel: FileChannel, encoder: CharsetEnco
     writeString(userId)
     writeSeparator()
     //ignore group
+    writeString(" ")
     writeSeparator()
     writeString(name)
     writeSeparator()

@@ -8,7 +8,7 @@ import scala.language.postfixOps
 import scala.util.{Failure, Random, Success, Try}
 
 import akka.NotUsed
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
@@ -24,8 +24,9 @@ import vending.http.json.Api._
 //https://github.com/nuxeo/gatling-report -> different gatling report processor
 
 object TestClient extends App {
+  val actorType = "sm"
 
-  val duration: FiniteDuration = 45 seconds
+  val duration: FiniteDuration = 10 seconds
 
   def now() = System.currentTimeMillis()
 
@@ -37,11 +38,13 @@ object TestClient extends App {
 
   val stats = as.actorOf(Props(new StatsActor(BufferedFileChannelWriter("test"))))
 
-  private val sessionsCount = 10
+  private val sessionsCount = 20
   private val countDownLatch = new CountDownLatch(sessionsCount)
   (0 until sessionsCount).foreach { id =>
-    val endpoint = Endpoint(id, "sm", "192.168.0.231")
-    as.scheduler.scheduleOnce((id * 3) seconds, () => startUser(duration, stats)(endpoint))
+//    val endpoint = Endpoint(id, "actor", "192.168.0.231")
+
+    val endpoint = Endpoint(id, actorType, "192.168.0.231")
+    as.scheduler.scheduleOnce((id * 1) seconds, () => startUser(duration, stats)(endpoint))
   }
 
   countDownLatch.await()
@@ -52,13 +55,11 @@ object TestClient extends App {
     //    implicit val e = endpoint
     println(s"Starting load for user ${endpoint.userId} and actor type ${endpoint.actorType}")
     val future: Future[Source[ServerSentEvent, NotUsed]] = Api.sseEvents()
-    var start = now()
 
     future.foreach { stream =>
       val userId = endpoint.userId.toString
-      statsActor ! LogUserStart(userId, start, now())
-      val random = new Random(now())
-
+      statsActor ! LogUserStart(userId, now(), now())
+      val workingActor = as.actorOf(Props(new WorkingActor(statsActor)))
       stream
         .takeWithin(duration)
         .runForeach { sse =>
@@ -68,48 +69,17 @@ object TestClient extends App {
             v match {
               case Success(r) =>
                 r match {
-
-                  case _: CreditInfoV1 =>
-                    statsActor ! LogResponse(userId, "credit", start, now())
-                    if (random.nextInt(40) < 1) {
-                      Api.withdraw()
-                    } else {
-                      Api.selectProduct(random.nextInt(11) + 1)
-                    }
-                    start = now()
-
-                  case _: GiveProductAndChangeV1 =>
-                    statsActor ! LogResponse(userId, "buy", start, now())
-                    Api.insertCoin(random.nextInt(30))
-                    start = now()
-
-                  case NotEnoughOfCreditV1(diff, _) =>
-                    statsActor ! LogResponse(userId, "no enough money", start, now())
-                    Api.insertCoin(diff)
-                    start = now()
-
-                  case _: CollectYourMoneyV1 =>
-                    statsActor ! LogResponse(userId, "withdrawn", start, now())
-                    Api.insertCoin(random.nextInt(30))
-                    start = now()
-
-                  case _: WrongProductV1 =>
-                    statsActor ! LogResponse(userId, "wrong product", start, now())
-                    Api.selectProduct(random.nextInt(10) + 1)
-                    start = now()
-
-                  case _ =>
+                  case any: Any => workingActor ! any
                 }
-
               case Failure(e) =>
                 e.printStackTrace()
             }
-
           }
         }.onComplete {
         case Success(value) =>
           println(s"Stream for user ${endpoint.userId} is done with value $value")
-          statsActor ! LogUserEnd(userId, start, now())
+          statsActor ! LogUserEnd(userId, now(), now())
+          workingActor ! PoisonPill
           countDownLatch.countDown()
         case Failure(exception) =>
           println(s"Stream is done with exception ${exception.getMessage}")
@@ -117,8 +87,7 @@ object TestClient extends App {
       }
 
       future.onComplete {
-        case Success(value) =>
-          println(s"Have stream $value")
+        case Success(_) =>
           Api.insertCoin(5)
         case Failure(e) => e.printStackTrace()
       }
@@ -131,10 +100,58 @@ object TestClient extends App {
   case class LogUserEnd(user: String, start: Long, now: Long)
   case object FlushAndClose
 
+  class WorkingActor(statsActor: ActorRef)(implicit val endpoint: Endpoint) extends Actor {
+    var start: Long = now()
+
+    val userId: String = endpoint.userId.toString
+    val random: Random = new Random(now())
+
+    private val actionDelay: FiniteDuration = 70 millis
+
+    override def receive: Receive = {
+      case _: CreditInfoV1 =>
+        statsActor ! LogResponse(userId, "credit", start, now())
+        if (random.nextInt(40) < 1) {
+          context.system.scheduler.scheduleOnce(actionDelay, self, "withdraw")
+        } else {
+          context.system.scheduler.scheduleOnce(actionDelay, self, "select")
+        }
+
+      case _: GiveProductAndChangeV1 =>
+        statsActor ! LogResponse(userId, "buy", start, now())
+        context.system.scheduler.scheduleOnce(actionDelay, self, "insert")
+
+      case NotEnoughOfCreditV1(_, _) =>
+        statsActor ! LogResponse(userId, "no enough money", start, now())
+        context.system.scheduler.scheduleOnce(actionDelay, self, "insert")
+
+      case _: CollectYourMoneyV1 =>
+        statsActor ! LogResponse(userId, "withdrawn", start, now())
+        context.system.scheduler.scheduleOnce(actionDelay, self, "insert")
+
+      case _: WrongProductV1 =>
+        statsActor ! LogResponse(userId, "wrong product", start, now())
+        context.system.scheduler.scheduleOnce(actionDelay, self, "select")
+
+      case "insert" =>
+        start = now()
+        Api.insertCoin(random.nextInt(30))
+
+      case "select" =>
+        start = now()
+        Api.selectProduct(random.nextInt(11) + 1)
+
+      case "withdraw" =>
+        start = now()
+        Api.withdraw()
+
+    }
+  }
+
   class StatsActor(writer: BufferedFileChannelWriter) extends Actor {
 
     override def preStart(): Unit = {
-      writer.startSimulation("zssdfsfsfz", "ss", simulationStart)
+      writer.startSimulation("Vending machine load test", s"Actor type: $actorType", simulationStart)
     }
     override def receive: Receive = {
       case LogResponse(user, action, begin, now) =>
