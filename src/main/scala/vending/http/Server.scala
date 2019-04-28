@@ -7,7 +7,6 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
-
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
@@ -23,7 +22,7 @@ import cats.syntax.option._
 import vending.Domain.{Credit, GetState, Product, SelectProduct, Withdrawn, _}
 import vending.VendingMachineSm.VendingMachineState
 import vending.http.json.Api._
-import vending.{BaseVendingMachineActor, SmActor, Symbols}
+import vending.{BaseVendingMachineActor, SmActor, SmPersistentActor, Symbols}
 
 object Server extends App {
   implicit val system: ActorSystem = ActorSystem("system")
@@ -53,7 +52,7 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )))
+        )),s"actor_$i")
       i -> ActorWithStream(actorRef, eventsSource)
     }
     .toMap
@@ -66,7 +65,20 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )))
+        )),s"sm_$i")
+      i -> ActorWithStream(actor, eventsSource)
+    })
+    .toMap
+
+  val smPersistentActorMap: Map[Int, ActorWithStream] = (0 to vmCount)
+    .map(i => {
+      val (sourceQueue, eventsSource) = stream()
+      val actor = system
+        .actorOf(Props(new SmPersistentActor(s"sm_$i")(quantity,
+          system.actorOf(Props(new StreamingActor(sourceQueue))).some,
+          system.actorOf(Props(new StreamingActor(sourceQueue))),
+          system.actorOf(Props(new StreamingActor(sourceQueue)))
+        )),s"smPersistent_$i")
       i -> ActorWithStream(actor, eventsSource)
     })
     .toMap
@@ -74,7 +86,13 @@ object Server extends App {
   implicit val timeout: Timeout = Timeout(10 seconds)
   val route =
     pathPrefix("api" / Segment / IntNumber) { (actorType, number) =>
-      val as = if (actorType == "actor") baseActorMap(number) else smActorMap(number)
+      val as = if (actorType == "actor") {
+        baseActorMap(number)
+      } else if (actorType=="smPersistent") {
+        smPersistentActorMap(number)
+      } else {
+        smActorMap(number)
+      }
       val actor = as.actor
       val eventSource = as.eventSource
       get {
@@ -119,6 +137,7 @@ object Server extends App {
     .onComplete(_ => system.terminate()) // and shutdown when done
 
   class StreamingActor(source: SourceQueueWithComplete[ResultV1]) extends Actor {
+
     import vending.http.json.Api._
 
     override def receive: Receive = {

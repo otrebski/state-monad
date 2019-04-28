@@ -4,9 +4,9 @@ import java.time.LocalDate
 
 import scala.annotation.tailrec
 import cats.syntax.option._
+
 import scala.io.StdIn
 import scala.util.Try
-
 import akka.actor.{ActorRef, ActorSystem, Props}
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
@@ -41,7 +41,8 @@ object VendingMachineDemo extends App {
     """Pick Vending machine implementation:
       | 1 -> Logic in actor
       | 2 -> Logic in State Monad
-      | 3 -> Logic in State Monad with persistence  """.stripMargin)
+      | 3 -> Logic in State Monad with persistence
+      | 4 -> Logic in actor with persistence""".stripMargin)
 
   private def parseAction(line: String): Option[Action] = {
     import cats.syntax.option._
@@ -71,11 +72,17 @@ object VendingMachineDemo extends App {
         userOutputActor.some,
         reportsActor,
         userOutputActor))
-      case "3" => Props(new SmPersistentActor("p")(
+      case "3" => Props(new SmPersistentActor("p1")(
         vendingMachineState.quantity,
         userOutputActor.some,
         reportsActor,
         userOutputActor))
+      case "4" => Props(new VendingMachinePersistentActor("p2")(
+        vendingMachineState.quantity,
+        userOutputActor.some,
+        reportsActor,
+        userOutputActor
+      ))
       case _ => chooseActor(userOutputActor, reportsActor)
     }
   }

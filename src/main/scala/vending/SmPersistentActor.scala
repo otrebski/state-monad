@@ -36,6 +36,7 @@ class SmPersistentActor(val persistenceId: String)(
     case action: Action =>
 
       persist(action) { a =>
+        println(s"Persisted $a")
         val (newState, effects) = VendingMachineSm
           .compose(a, LocalDate.now())
           .run(vendingMachineState)

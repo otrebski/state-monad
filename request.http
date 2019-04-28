@@ -1,16 +1,16 @@
-GET http://{{host}}:8080/api/sm/1/select/1
+GET http://{{host}}:8080/api/{{actorType}}/1/select/1
 
 ####
-GET http://{{host}}:8080/api/sm/1/credit/56
+GET http://{{host}}:8080/api/{{actorType}}/1/credit/56
 
 ####
-GET http://{{host}}:8080/api/sm/1/withdrawn
+GET http://{{host}}:8080/api/{{actorType}}/1/withdrawn
 
 ####
-GET http://{{host}}:8080/api/sm/1/status
+GET http://{{host}}:8080/api/{{actorType}}/1/status
 
 ###
-GET http://{{host}}:8080/api/sm/1/events
+GET http://{{host}}:8080/api/{{actorType}}/1/events
 
 ###
 

@@ -24,9 +24,10 @@ import vending.http.json.Api._
 //https://github.com/nuxeo/gatling-report -> different gatling report processor
 
 object TestClient extends App {
-  val actorType = "sm"
+  private val actorType = "smPersistent"
 
-  val duration: FiniteDuration = 10 seconds
+  private val duration: FiniteDuration = 100 seconds
+  private val sessionsCount = 40
 
   def now() = System.currentTimeMillis()
 
@@ -36,14 +37,13 @@ object TestClient extends App {
 
   private val simulationStart: Long = now()
 
-  val stats = as.actorOf(Props(new StatsActor(BufferedFileChannelWriter("test"))))
+  val stats = as.actorOf(Props(new StatsActor(BufferedFileChannelWriter(s"test_${actorType}_users_$sessionsCount"))))
 
-  private val sessionsCount = 20
   private val countDownLatch = new CountDownLatch(sessionsCount)
   (0 until sessionsCount).foreach { id =>
 //    val endpoint = Endpoint(id, "actor", "192.168.0.231")
 
-    val endpoint = Endpoint(id, actorType, "192.168.0.231")
+    val endpoint = Endpoint(id, actorType, "127.0.0.1")
     as.scheduler.scheduleOnce((id * 1) seconds, () => startUser(duration, stats)(endpoint))
   }
 

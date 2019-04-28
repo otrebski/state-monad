@@ -30,6 +30,10 @@ libraryDependencies ++= Seq(
 //  "io.circe" %% "circe-parser" % "0.11.1"
 )
 
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.93"
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.93" % Test
+libraryDependencies += "com.github.romix.akka" %% "akka-kryo-serialization" % "0.5.1"
+
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 libraryDependencies += "org.iq80.leveldb" % "leveldb" % "0.11"
 libraryDependencies += "com.google.guava" % "guava" % "27.0.1-jre"

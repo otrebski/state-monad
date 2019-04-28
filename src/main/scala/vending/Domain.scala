@@ -39,6 +39,8 @@ object Domain {
 
   object ActionResult {
 
+    def empty(): ActionResult = ActionResult()
+
     implicit val monoid: Monoid[ActionResult] = new Monoid[ActionResult] {
       override def empty: ActionResult = ActionResult()
       override def combine(x: ActionResult, y: ActionResult): ActionResult =

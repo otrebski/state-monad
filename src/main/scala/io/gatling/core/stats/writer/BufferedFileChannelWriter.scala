@@ -16,7 +16,7 @@
 
 package io.gatling.core.stats.writer
 
-import java.io.RandomAccessFile
+import java.io.{File, RandomAccessFile}
 import java.nio.channels.FileChannel
 import java.nio.charset.{CharsetEncoder, StandardCharsets}
 import java.nio.file.{FileSystems, Path}
@@ -30,7 +30,9 @@ object BufferedFileChannelWriter {
     val encoder: CharsetEncoder = StandardCharsets.US_ASCII.newEncoder()
     //    Charset.forName("US_ASCII").newEncoder()
     //    new File(s"out/$runId").mkdirs()
+
     val simulationLog: Path = FileSystems.getDefault.getPath("out", runId, "simulation.log")
+    new File("out",runId).mkdirs()
     val channel = new RandomAccessFile(simulationLog.toFile, "rw").getChannel
     val bb = ByteBuffer.allocate(100 * 1024) //TODO increase
     new BufferedFileChannelWriter(channel, encoder, bb)
@@ -75,7 +77,7 @@ final class BufferedFileChannelWriter(channel: FileChannel, encoder: CharsetEnco
     writeSeparator()
     writePositiveLong(start)
     writeSeparator()
-    writeString(" ")
+    writeString("Description")
     writeSeparator()
     writeString("3.0.3\n")
   }
@@ -110,7 +112,6 @@ final class BufferedFileChannelWriter(channel: FileChannel, encoder: CharsetEnco
     writeSeparator()
     writeString(userId)
     writeSeparator()
-    //ignore group
     writeString(" ")
     writeSeparator()
     writeString(name)
