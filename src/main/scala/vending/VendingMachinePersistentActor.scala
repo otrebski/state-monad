@@ -3,7 +3,7 @@ package vending
 import java.time.LocalDate
 
 import akka.actor.ActorRef
-import akka.persistence.PersistentActor
+import akka.persistence.{PersistentActor, SnapshotOffer}
 import cats.syntax.option._
 import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
@@ -21,6 +21,7 @@ class VendingMachinePersistentActor(val persistenceId: String)(
   var credit: Int = 0
   var income: Int = 0
   var expiryNotified: Set[Domain.Product] = Set.empty
+  val snapShotInterval = 1000
 
   override def preStart(): Unit = {
     super.preStart()
@@ -30,6 +31,11 @@ class VendingMachinePersistentActor(val persistenceId: String)(
 
   override def receiveRecover: Receive = {
     case a: Action => updateState(a)
+    case SnapshotOffer(_,vmState:VendingMachineState) =>
+      credit = vmState.credit
+      income = vmState.income
+      expiryNotified = vmState.reportedExpiryDate
+      quantity = vmState.quantity
     case _ => //ignore
   }
 
@@ -41,6 +47,13 @@ class VendingMachinePersistentActor(val persistenceId: String)(
         result.userOutputs.foreach(userReportActor.getOrElse(sender()) ! _)
         result.displayState.foreach(statePublisher ! _)
         result.systemReports.foreach(reportsActor ! _)
+        if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0)
+          saveSnapshot(VendingMachineState(
+            credit = credit,
+            income = income,
+            reportedExpiryDate = expiryNotified,
+            quantity = quantity
+          ))
       }
 
     case GetState =>
