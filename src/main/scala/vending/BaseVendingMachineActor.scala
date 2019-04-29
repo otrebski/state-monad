@@ -19,6 +19,7 @@ class BaseVendingMachineActor(
   var credit: Int = 0
   var income: Int = 0
   var expiryNotified: Set[Domain.Product] = Set.empty
+  var moneyBoxAlmostFullReported = false
 
   override def preStart(): Unit = {
     super.preStart()
@@ -40,10 +41,14 @@ class BaseVendingMachineActor(
           income += product.price                            // .......................
           quantity = quantity.updated(product, newQuantity)  // ......................
 
-          userReportActor.getOrElse(sender()) ! GiveProductAndChange(product, giveChange)   //Execute side effects
-          if (newQuantity == 0) reportsActor ! ProductShortage(product) //....................
-          if (income > 10) reportsActor ! MoneyBoxAlmostFull(income)    //....................
-          statePublisher ! Display(currentState()) //....................
+          //Execute side effects
+          userReportActor.getOrElse(sender()) ! GiveProductAndChange(product, giveChange)
+          if (newQuantity == 0) reportsActor ! ProductShortage(product)
+          if (!moneyBoxAlmostFullReported && income > 10) {
+            reportsActor ! MoneyBoxAlmostFull(income)
+            moneyBoxAlmostFullReported = true
+          }
+          statePublisher ! Display(currentState())
 
         case (Some(product), Some(q)) if q < 1 =>
           userReportActor.getOrElse(sender()) ! OutOfStock(product)

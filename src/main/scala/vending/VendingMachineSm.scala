@@ -109,8 +109,8 @@ object VendingMachineSm {
 
   def detectMoneyBoxAlmostFull(): State[VendingMachineState, Option[MoneyBoxAlmostFull]] = {
     State[VendingMachineState, Option[MoneyBoxAlmostFull]] { s =>
-      if (s.income > 10) {
-        (s, MoneyBoxAlmostFull(s.income).some)
+      if (!s.reportedMoneyBoxAlmostFull && s.income > 10) {
+        (s.copy(reportedMoneyBoxAlmostFull = true), MoneyBoxAlmostFull(s.income).some)
       } else {
         (s, none[MoneyBoxAlmostFull])
       }
@@ -130,7 +130,8 @@ object VendingMachineSm {
                                  income: Int,
                                  quantity: Map[Product, Int] = Map.empty,
                                  reportedExpiryDate: Set[Domain.Product] = Set.empty[Domain.Product],
-                                 reportedShortage: Set[Domain.Product] = Set.empty[Domain.Product]
+                                 reportedShortage: Set[Domain.Product] = Set.empty[Domain.Product],
+                                 reportedMoneyBoxAlmostFull:Boolean = false
                                 )
 
 }

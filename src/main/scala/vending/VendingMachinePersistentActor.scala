@@ -21,7 +21,8 @@ class VendingMachinePersistentActor(val persistenceId: String)(
   var credit: Int = 0
   var income: Int = 0
   var expiryNotified: Set[Domain.Product] = Set.empty
-  val snapShotInterval = 1000
+  var moneyBoxAlmostFullReported: Boolean = false
+  val snapShotInterval: Int = 1000
 
   override def preStart(): Unit = {
     super.preStart()
@@ -36,6 +37,7 @@ class VendingMachinePersistentActor(val persistenceId: String)(
       income = vmState.income
       expiryNotified = vmState.reportedExpiryDate
       quantity = vmState.quantity
+      moneyBoxAlmostFullReported = vmState.reportedMoneyBoxAlmostFull
     case _ => //ignore
   }
 
@@ -52,7 +54,8 @@ class VendingMachinePersistentActor(val persistenceId: String)(
             credit = credit,
             income = income,
             reportedExpiryDate = expiryNotified,
-            quantity = quantity
+            quantity = quantity,
+            reportedMoneyBoxAlmostFull = moneyBoxAlmostFullReported
           ))
       }
 
@@ -94,7 +97,10 @@ class VendingMachinePersistentActor(val persistenceId: String)(
             quantity = quantity.updated(product, newQuantity) // ......................
 
             val shortage: Option[SystemReporting] = if (newQuantity == 0) ProductShortage(product).some else none[SystemReporting]
-            val collectMoney: Option[SystemReporting] = if (income > 10) MoneyBoxAlmostFull(income).some else none[SystemReporting]
+            val collectMoney: Option[SystemReporting] = if (!moneyBoxAlmostFullReported && income > 10) {
+              moneyBoxAlmostFullReported = true
+              MoneyBoxAlmostFull(income).some
+            } else none[SystemReporting]
             ActionResult(
               userOutputs = List(GiveProductAndChange(product, giveChange)),
               systemReports = List(shortage, collectMoney).flatten,

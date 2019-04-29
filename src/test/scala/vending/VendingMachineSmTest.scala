@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import cats.syntax.option._
 import org.scalatest.{Matchers, WordSpec}
-import vending.Domain.{_}
+import vending.Domain._
 import vending.VendingMachineSm.VendingMachineState
 
 class VendingMachineSmTest extends WordSpec with Matchers {
@@ -110,6 +110,19 @@ class VendingMachineSmTest extends WordSpec with Matchers {
       effects.systemReports should contain(MoneyBoxAlmostFull(100))
     }
 
+    "report if money box is almost full only once" in {
+      val (_, effects) = (
+        for {
+          _ <- VendingMachineSm.compose(Credit(200), now)
+          e1 <- VendingMachineSm.compose(SelectProduct("2"), now)
+          _ <- VendingMachineSm.compose(Credit(200), now)
+          e2 <- VendingMachineSm.compose(SelectProduct("2"), now)
+        } yield (e1,e2)).run(vendingMachineState).value
+
+      effects._1.systemReports should contain (MoneyBoxAlmostFull(100))
+      effects._2.systemReports should not contain MoneyBoxAlmostFull(100)
+    }
+
     "detect shortage of product" in {
       val (_, effects) = (
         for {
@@ -129,7 +142,7 @@ class VendingMachineSmTest extends WordSpec with Matchers {
         } yield (e1, e2)).run(vendingMachineState).value
 
       effects1.systemReports should contain(ExpiredProducts(List(pizza)))
-      effects2.systemReports should not contain (ExpiredProducts(List(pizza)))
+      effects2.systemReports should not contain ExpiredProducts(List(pizza))
       state.reportedExpiryDate should contain(pizza)
     }
 

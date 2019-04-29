@@ -178,6 +178,36 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
 
     }
 
+    "report if money box is almost full only once" in {
+      val userOutput = TestProbe("userOutput")
+      val reports = TestProbe("reports")
+      val statePublisher = TestProbe("statePublisher")
+      val underTest = createActor(quantity, userOutput.ref, reports.ref, statePublisher.ref)
+
+      underTest ! Credit(100)
+      userOutput.expectMsg(CreditInfo(100))
+      statePublisher.expectMsgType[Display]
+
+      underTest ! SelectProduct("2")
+
+      userOutput.expectMsg(GiveProductAndChange(pizza, 0))
+      statePublisher.expectMsgType[Display]
+      reports.expectMsg(MoneyBoxAlmostFull(100))
+
+      underTest ! Credit(100)
+      userOutput.expectMsg(CreditInfo(100))
+      statePublisher.expectMsgType[Display]
+
+      underTest ! SelectProduct("2")
+
+      userOutput.expectMsg(GiveProductAndChange(pizza, 0))
+      statePublisher.expectMsgType[Display]
+      reports.expectNoMessage()
+
+    }
+
+
+
     "report shortage of product" in {
       val userOutput = TestProbe("userOutput")
       val reports = TestProbe("reports")
@@ -192,7 +222,6 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       userOutput.expectMsg(GiveProductAndChange(beer, 0))
       statePublisher.expectMsgType[Display]
       reports.expectMsg(ProductShortage(beer))
-
     }
 
     "report issues with expiry date" in {
@@ -219,6 +248,7 @@ abstract class BaseActorTest extends TestKit(ActorSystem("test"))
       underTest ! CheckExpiryDate
       reports.expectNoMessage()
     }
+
 
   }
 
