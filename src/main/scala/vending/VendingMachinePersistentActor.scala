@@ -1,5 +1,7 @@
 package vending
 
+import java.time.LocalDate
+
 import akka.actor.ActorRef
 import akka.persistence.PersistentActor
 import cats.syntax.option._
@@ -52,7 +54,19 @@ class VendingMachinePersistentActor(val persistenceId: String)(
       case Withdrawn =>
         credit = 0
         ActionResult(userOutputs = List(CollectYourMoney), displayState = Display(currentState()).some)
-      case CheckExpiryDate => ActionResult.empty() //TODO ???
+      case CheckExpiryDate =>
+
+        val now = LocalDate.now()
+        val expiredProducts = quantity.keys.filter { p =>
+          !p.expiryDate.isAfter(now) && !expiryNotified.contains(p)
+        }
+        expiryNotified = expiryNotified ++ expiredProducts.toSet
+        if (expiredProducts.nonEmpty) {
+          ActionResult(systemReports = List(ExpiredProducts(expiredProducts.toList)))
+        } else {
+          ActionResult.empty()
+        }
+
       case SelectProduct(number) =>
         val selected = number.toString
         val maybeProduct = quantity.keys.find(_.code == selected)
