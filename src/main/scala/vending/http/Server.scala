@@ -22,7 +22,7 @@ import cats.syntax.option._
 import vending.Domain.{Credit, GetState, Product, SelectProduct, Withdrawn, _}
 import vending.VendingMachineSm.VendingMachineState
 import vending.http.json.Api._
-import vending.{BaseVendingMachineActor, SmActor, SmPersistentActor, Symbols}
+import vending.{BaseVendingMachineActor, SmActor, SmPersistentActor, Symbols, VendingMachinePersistentActor}
 
 object Server extends App {
   implicit val system: ActorSystem = ActorSystem("system")
@@ -53,6 +53,18 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
         )),s"actor_$i")
+      i -> ActorWithStream(actorRef, eventsSource)
+    }
+    .toMap
+  val basePersistentActorMap: Map[Int, ActorWithStream] = (0 to vmCount)
+    .map { i =>
+      val (sourceQueue, eventsSource) = stream()
+      val actorRef = system
+        .actorOf(Props(new VendingMachinePersistentActor(s"vm_persistent_$i")(quantity,
+          system.actorOf(Props(new StreamingActor(sourceQueue))).some,
+          system.actorOf(Props(new StreamingActor(sourceQueue))),
+          system.actorOf(Props(new StreamingActor(sourceQueue)))
+        )),s"persistentActor_$i")
       i -> ActorWithStream(actorRef, eventsSource)
     }
     .toMap
@@ -90,6 +102,8 @@ object Server extends App {
         baseActorMap(number)
       } else if (actorType=="smPersistent") {
         smPersistentActorMap(number)
+      } else if (actorType=="persistentActor") {
+        basePersistentActorMap(number)
       } else {
         smActorMap(number)
       }
