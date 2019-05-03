@@ -1,0 +1,13 @@
+@font-face {
+    font-family: "lcd";
+    src: url("DIGITALDREAMFATNARROW.ttf") format('truetype');
+}
+
+.textbox {
+    background: greenyellow;
+    color: black;
+    font-family: "lcd", Arial, sans-serif;;
+    font-size: 40px;
+    padding: 10px;
+}
+

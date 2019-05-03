@@ -2,11 +2,12 @@ package vending.http
 
 import java.time.LocalDate
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
+
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
@@ -30,16 +31,26 @@ object Server extends App {
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
   private val expiryDate: LocalDate = LocalDate.now().plusDays(2)
-  private val quantity: Map[Product, Int] = (0 to 10).map(
-    i => Product(price = 5, code = s"$i", symbol = Symbols.candy, expiryDate = expiryDate) -> Integer.MAX_VALUE
-  ).toMap
+  val symbols = List(Symbols.banana,
+    Symbols.candy,
+    Symbols.beer,
+    Symbols.pizza,
+    Symbols.hamburger,
+    Symbols.spaghetti,
+    Symbols.fries)
+  private val quantity: Map[Product, Int] = symbols
+    .zipWithIndex
+    .map {
+      case (symbol, i) => Product(price = 5, code = s"${i + 1}", symbol = symbol, expiryDate = expiryDate) -> Integer.MAX_VALUE
+    }
+    .toMap
 
   case class ActorWithStream(actor: ActorRef, eventSource: Source[ServerSentEvent, NotUsed])
 
   private def stream(): (SourceQueueWithComplete[ResultV1], Source[ServerSentEvent, NotUsed]) =
     Source.queue[ResultV1](Int.MaxValue, OverflowStrategy.backpressure)
       .map(message => ServerSentEvent(message.toJson.compactPrint))
-      .keepAlive(1 seconds, () => ServerSentEvent.heartbeat)
+      .keepAlive(20 seconds, () => ServerSentEvent.heartbeat)
       .toMat(BroadcastHub.sink[ServerSentEvent])(Keep.both)
       .run()
 
@@ -52,7 +63,7 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )),s"actor_$i")
+        )), s"actor_$i")
       i -> ActorWithStream(actorRef, eventsSource)
     }
     .toMap
@@ -64,7 +75,7 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )),s"persistentActor_$i")
+        )), s"persistentActor_$i")
       i -> ActorWithStream(actorRef, eventsSource)
     }
     .toMap
@@ -77,7 +88,7 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )),s"sm_$i")
+        )), s"sm_$i")
       i -> ActorWithStream(actor, eventsSource)
     })
     .toMap
@@ -90,7 +101,7 @@ object Server extends App {
           system.actorOf(Props(new StreamingActor(sourceQueue))).some,
           system.actorOf(Props(new StreamingActor(sourceQueue))),
           system.actorOf(Props(new StreamingActor(sourceQueue)))
-        )),s"smPersistent_$i")
+        )), s"smPersistent_$i")
       i -> ActorWithStream(actor, eventsSource)
     })
     .toMap
@@ -100,9 +111,9 @@ object Server extends App {
     pathPrefix("api" / Segment / IntNumber) { (actorType, number) =>
       val as = if (actorType == "actor") {
         baseActorMap(number)
-      } else if (actorType=="smPersistent") {
+      } else if (actorType == "smPersistent") {
         smPersistentActorMap(number)
-      } else if (actorType=="persistentActor") {
+      } else if (actorType == "persistentActor") {
         basePersistentActorMap(number)
       } else {
         smActorMap(number)
@@ -120,17 +131,9 @@ object Server extends App {
           actor ! Withdrawn
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, s"<h1>Withdraw of $number</h1>"))
         } ~ path("status") {
-
-          val f: Future[VendingMachineState] = (actor ? GetState).mapTo[VendingMachineState]
           import akka.http.scaladsl.model.StatusCodes.InternalServerError
-          import cats.syntax.show._
-          val r = f
-            .map(_.show)
-            .map(_.replaceAll("\n", "</BR>\n"))
-
-          onComplete(r) {
-            case Success(value) => complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-              s"<h1>Status of $number</h1><code>$value</code>"))
+          onComplete((actor ? GetState).mapTo[VendingMachineState].map(VendingMachineStateV1.toApi)) {
+            case Success(value) => complete(value)
             case Failure(ex) => complete((InternalServerError, s"An error occurred: ${ex.getMessage}"))
           }
         } ~ path("events") {
@@ -140,6 +143,8 @@ object Server extends App {
         }
 
       }
+    } ~ get {
+      getFromResourceDirectory("gui/vending-gui/build/")
     }
 
   val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
