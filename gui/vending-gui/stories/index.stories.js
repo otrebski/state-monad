@@ -37,7 +37,7 @@ let vmState = {
 };
 
 storiesOf('Components', module).add("State", () => <VmState vmState={vmState}/>);
-storiesOf('Components', module).add("Interaction panel", () => <InteractionPanel/>);
-storiesOf('Components', module).add("Money", () => <Money/>);
-storiesOf('Components', module).add("Panel", () => <Panel/>);
+storiesOf('Components', module).add("Interaction panel", () => <InteractionPanel type="sm"/>);
+storiesOf('Components', module).add("Money", () => <Money type="sm"/>);
+storiesOf('Components', module).add("Panel", () => <Panel type="sm"/>);
 storiesOf('Components', module).add("Lcd Display", () => <LcdDisplay message="Take your product and 5 of change"/>);

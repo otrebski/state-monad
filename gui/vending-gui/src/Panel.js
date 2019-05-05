@@ -4,7 +4,7 @@ import "./Panel.css"
 class Panel extends Component {
 
     selectProduct = product => {
-        let url = '/api/sm/1/select/' + product;
+        let url = "/api/" + this.props.type + "/1/select/" + product;
         fetch(url)
     };
 
@@ -17,7 +17,7 @@ class Panel extends Component {
                 table.push(<br/>);
             }
         }
-        table.push(<button className="panelButton" onClick={() => fetch("/api/sm/1/withdrawn")}>C</button>);
+        table.push(<button className="panelButton" onClick={() => fetch("/api/" + this.props.type + "/1/withdrawn")}>C</button>);
         return table
     };
 

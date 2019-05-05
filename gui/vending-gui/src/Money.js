@@ -4,7 +4,7 @@ import "./Money.css"
 class Money extends Component {
 
     insertCoin = amount => {
-        let url = '/api/sm/1/credit/' + amount;
+        let url = "/api/" + this.props.type + "/1/credit/" + amount;
         fetch(url)
     };
 

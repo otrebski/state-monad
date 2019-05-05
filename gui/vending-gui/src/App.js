@@ -8,7 +8,9 @@ class App extends Component {
 
     constructor(props) {
         super(props);
-        this.eventSource = new EventSource("/api/sm/1/events");
+        let urlParams = new URLSearchParams(window.location.search);
+        let type = urlParams.get("type");
+        this.eventSource = new EventSource("/api/" + type + "/1/events");
         this.state = {
             message: "Loading ...",
             vmState: {
@@ -20,7 +22,7 @@ class App extends Component {
             }
 
         };
-        fetch("/api/sm/1/status")
+        fetch("/api/" + type + "/1/status")
             .then((response) => response.json())
             .then(state => this.setState({vmState: state, message: "Hello"}))
     }
@@ -56,13 +58,15 @@ class App extends Component {
 
 
     render() {
+        let urlParams = new URLSearchParams(window.location.search);
+        let type = urlParams.get("type");
         return (
             <div>
                 <div>
                     <h1>Vending machine</h1>
                     {/*<h2 style={{color: "black", background: "green"}}>LCD: {this.state.message}</h2>*/}
                     <LcdDisplay message={this.state.message}/>
-                    <InteractionPanel/>
+                    <InteractionPanel type={type}/>
                     <VmState vmState={this.state.vmState}/>
                 </div>
             </div>

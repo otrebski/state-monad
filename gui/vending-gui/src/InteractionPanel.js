@@ -8,10 +8,10 @@ class InteractionPanel extends Component {
     render() {
         return <div className="row">
             <div className="column">
-                <Panel/>
+                <Panel type={this.props.type}/>
             </div>
             <div className="column">
-                <Money/>
+                <Money type={this.props.type}/>
             </div>
         </div>
     }
