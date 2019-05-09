@@ -3,6 +3,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     width: 100%;
+    margin: 10px;
 }
 
 .column {
@@ -10,4 +11,5 @@
     flex-direction: column;
     flex-basis: 100%;
     flex: 1;
+    margin: 10px;
 }

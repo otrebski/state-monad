@@ -24,10 +24,10 @@ import vending.http.json.Api._
 //https://github.com/nuxeo/gatling-report -> different gatling report processor
 
 object TestClient extends App {
-  private val actorType = List("smPersistent","actor","sm","persistentActor")(3)
+  private val actorType = List("smPersistent", "actor", "sm", "persistentActor")(3)
 
-  private val duration: FiniteDuration = 100 seconds
-  private val sessionsCount = 100
+  private val duration: FiniteDuration = 10 seconds
+  private val sessionsCount = 40
 
   def now() = System.currentTimeMillis()
 
@@ -41,10 +41,10 @@ object TestClient extends App {
 
   private val countDownLatch = new CountDownLatch(sessionsCount)
   (0 until sessionsCount).foreach { id =>
-//    val endpoint = Endpoint(id, "actor", "192.168.0.231")
+    val endpoint = Endpoint(id, actorType, "192.168.0.231")
 
-    val endpoint = Endpoint(id, actorType, "127.0.0.1")
-    as.scheduler.scheduleOnce((id * 4) seconds, () => startUser(duration, stats)(endpoint))
+//    val endpoint = Endpoint(id, actorType, "127.0.0.1")
+    as.scheduler.scheduleOnce((id * 1) seconds, () => startUser(duration, stats)(endpoint))
   }
 
   countDownLatch.await()
@@ -68,9 +68,7 @@ object TestClient extends App {
             val v = Try(resultV1Format.read(data.parseJson))
             v match {
               case Success(r) =>
-                r match {
-                  case any: Any => workingActor ! any
-                }
+                workingActor ! r
               case Failure(e) =>
                 e.printStackTrace()
             }

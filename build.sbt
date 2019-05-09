@@ -18,11 +18,11 @@ scalacOptions ++= Seq(
 
 libraryDependencies += "org.typelevel" %% "cats-core" % "1.4.0"
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.5.21",
-  "com.typesafe.akka" %% "akka-persistence" % "2.5.21",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.21" % Test,
+  "com.typesafe.akka" %% "akka-actor" % "2.5.19",
+  "com.typesafe.akka" %% "akka-persistence" % "2.5.19",
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.19" % Test,
   "com.typesafe.akka" %% "akka-http" % "10.1.8",
-  "com.typesafe.akka" %% "akka-stream" % "2.5.21",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.19",
 //  "de.heikoseeberger" %% "akka-http-circe" % "1.25.2",
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8"
 //  "io.circe" %% "circe-core" % "0.11.1",
@@ -30,8 +30,8 @@ libraryDependencies ++= Seq(
 //  "io.circe" %% "circe-parser" % "0.11.1"
 )
 
-libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.93"
-libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.93" % Test
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.94"
+libraryDependencies += "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.94" % Test
 libraryDependencies += "com.github.romix.akka" %% "akka-kryo-serialization" % "0.5.1"
 
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"

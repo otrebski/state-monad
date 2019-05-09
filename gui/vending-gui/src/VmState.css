@@ -11,6 +11,7 @@
 
 .box {
     padding: 10px;
+    /*margin-bottom: 140px;*/
     border: 1px solid black;
     outline-style: solid;
 }
@@ -21,20 +22,6 @@
 
 .quantity {
     font-size: 30px;
-}
-
-.row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-}
-
-.column {
-    display: flex;
-    flex-direction: column;
-    flex-basis: 100%;
-    flex: 1;
 }
 
 div {

@@ -6,7 +6,7 @@ import Money from "../src/Money";
 import Panel from "../src/Panel";
 import InteractionPanel from "../src/InteractionPanel";
 import LcdDisplay from "../src/LcdDisplay";
-
+import VendingMachine from "../src/VendingMachine";
 
 
 let vmState = {
@@ -41,3 +41,4 @@ storiesOf('Components', module).add("Interaction panel", () => <InteractionPanel
 storiesOf('Components', module).add("Money", () => <Money type="sm"/>);
 storiesOf('Components', module).add("Panel", () => <Panel type="sm"/>);
 storiesOf('Components', module).add("Lcd Display", () => <LcdDisplay message="Take your product and 5 of change"/>);
+storiesOf('Components', module).add("Vending machine", () => <VendingMachine message="Take your product and 5 of change" type="sm" vmState={vmState}/> );

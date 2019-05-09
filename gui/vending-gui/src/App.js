@@ -1,8 +1,6 @@
 import React, {Component} from 'react';
-import VmState from "./VmState";
 import './App.css';
-import InteractionPanel from "./InteractionPanel";
-import LcdDisplay from "./LcdDisplay";
+import VendingMachine from "./VendingMachine";
 
 class App extends Component {
 
@@ -60,17 +58,7 @@ class App extends Component {
     render() {
         let urlParams = new URLSearchParams(window.location.search);
         let type = urlParams.get("type");
-        return (
-            <div>
-                <div>
-                    <h1>Vending machine</h1>
-                    {/*<h2 style={{color: "black", background: "green"}}>LCD: {this.state.message}</h2>*/}
-                    <LcdDisplay message={this.state.message}/>
-                    <InteractionPanel type={type}/>
-                    <VmState vmState={this.state.vmState}/>
-                </div>
-            </div>
-        );
+        return (<VendingMachine type={type} message={this.state.message} vmState={this.state.vmState}/>);
     }
 }
 

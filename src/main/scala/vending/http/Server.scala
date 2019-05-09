@@ -54,7 +54,7 @@ object Server extends App {
       .toMat(BroadcastHub.sink[ServerSentEvent])(Keep.both)
       .run()
 
-  private val vmCount = 2
+  private val vmCount = 1000
   val baseActorMap: Map[Int, ActorWithStream] = (0 to vmCount)
     .map { i =>
       val (sourceQueue, eventsSource) = stream()
@@ -144,8 +144,9 @@ object Server extends App {
 
       }
     } ~ get {
-      //run "yarn build" and copy content of build dir to gui dir
-      getFromResourceDirectory("gui/")
+      path("") {
+        getFromResource("gui/index.html")
+      } ~ getFromResourceDirectory("gui/")
     }
 
   val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)

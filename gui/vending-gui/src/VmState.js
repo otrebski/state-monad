@@ -20,7 +20,7 @@ class VmState extends Component {
     render() {
         return (
             <div>
-                <h2>Quantity</h2>
+                <h2>Products</h2>
                 {this.createTable(this.props.vmState.quantity)}
             </div>
         )
