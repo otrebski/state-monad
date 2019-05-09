@@ -1,4 +1,5 @@
 enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
 
 name := "state-monad"
 version := "0.1"
@@ -51,4 +52,6 @@ addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 grollHistoryRef := "lambdadays_2019"
 
 mainClass := Some("vending.http.Server")
+dockerEntrypoint := Seq("/opt/docker/bin/server")
+dockerExposedPorts := Seq(9000, 9443)
 

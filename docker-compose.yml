@@ -1,0 +1,28 @@
+version: '3'
+services:
+
+  cassandra:
+    image: cassandra:3
+#    environment:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  state-monad:
+    image: state-monad:0.1
+    depends_on:
+      - cassandra
+    links:
+      - cassandra
+    environment:
+      CASSANDRA_HOST: cassandra
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    ports:
+      - 8080:8080
+
