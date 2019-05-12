@@ -50,6 +50,8 @@ class App extends Component {
             this.setState({message: "Wrong selection"});
         } else if (messageType === "NotEnoughOfCreditV1") {
             this.setState({message: "Not enough of credit, insert " + event.diff});
+        } else if (messageType === "OutOfStockV1") {
+            this.setState({message: "Out of stock of " + event.code})
         }
 
     }
