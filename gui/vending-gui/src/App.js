@@ -17,8 +17,8 @@ class App extends Component {
                 quantity: [],
                 reportedExpiryDate: [],
                 reportedShortage: []
-            }
-
+            },
+            reportToOwner: ""
         };
         fetch("/api/" + type + "/0/status")
             .then((response) => response.json())
@@ -52,6 +52,8 @@ class App extends Component {
             this.setState({message: "Not enough of credit, insert " + event.diff});
         } else if (messageType === "OutOfStockV1") {
             this.setState({message: "Out of stock of " + event.code})
+        } else if (messageType === "ProductShortageV1") {
+            this.setState({reportToOwner: "Out of stock of " + event.products.symbol})
         }
 
     }
@@ -60,7 +62,23 @@ class App extends Component {
     render() {
         let urlParams = new URLSearchParams(window.location.search);
         let type = urlParams.get("type");
-        return (<VendingMachine type={type} message={this.state.message} vmState={this.state.vmState}/>);
+        let popup = <div/>;
+        if (this.state.reportToOwner.length > 0) {
+            popup = (
+                <div id="popup" className="modal">
+                    <div className="modal-content">
+                        Message to owner:
+                        <span className="close" onClick={() => this.setState({reportToOwner: ""})}>&times;</span>
+                        <p>{this.state.reportToOwner}</p>
+                    </div>
+
+                </div>)
+        }
+
+        return <div>
+            {popup}
+            <VendingMachine type={type} message={this.state.message} vmState={this.state.vmState}/>
+        </div>
     }
 }
 
