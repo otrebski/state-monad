@@ -8,7 +8,7 @@ class App extends Component {
         super(props);
         let urlParams = new URLSearchParams(window.location.search);
         let type = urlParams.get("type");
-        this.eventSource = new EventSource("/api/" + type + "/1/events");
+        this.eventSource = new EventSource("/api/" + type + "/0/events");
         this.state = {
             message: "Loading ...",
             vmState: {
@@ -20,7 +20,7 @@ class App extends Component {
             }
 
         };
-        fetch("/api/" + type + "/1/status")
+        fetch("/api/" + type + "/0/status")
             .then((response) => response.json())
             .then(state => this.setState({vmState: state, message: "Hello"}))
     }
